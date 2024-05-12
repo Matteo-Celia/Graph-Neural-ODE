@@ -11,8 +11,8 @@ import random
 import string
 
 from data import TrajectoryDataset
-from model import PBC_MSE_loss, DeltaGN, HierarchicalDeltaGN, HOGN, HierarchicalHOGN
-from util import full_graph_senders_and_recievers, create_folder, collate_into_one_graph
+from model import PBC_MSE_loss, DeltaGN, HierarchicalDeltaGN, HOGN, HierarchicalHOGN, GNSTODE
+from utils import full_graph_senders_and_recievers, create_folder, collate_into_one_graph, data_dicts_to_graphs_tuple
 from eval import evaluate_model
 
 def training_step_static_graph(model, data, R_s, R_r, dt, device, accumulate_steps, box_size):
@@ -47,6 +47,12 @@ def validation_step_static_graph(model, test_data, R_s, R_r, dt, device, box_siz
     test_loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
 
     return test_loss.item()
+
+def build_GraphTuple(inputs, R_s, R_r):
+
+    data_dict_list = []
+
+
 
 def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_size, graph_type):
 
@@ -83,6 +89,9 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
         # Push data to the GPU
         inputs = inputs.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
+
+        #build GraphTuple object to pass to the model
+        #graph = build_GraphTuple(inputs, R_s, R_r)
 
         # Forward pass (and time it)
         start_time = time.perf_counter_ns()
@@ -136,7 +145,7 @@ def validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_
         return test_loss.item()
 
 def train_model(model_type="DeltaGN", dataset="3_particles_gravity", learning_rate=1e-3, lr_decay=0.97725, batch_size=100, epochs=200, accumulate_steps=1, model_dir="models", data_dir="data",
-                hidden_units=-1, validate=True, validate_epochs=1, graph_type='fully_connected', integrator='rk4',
+                hidden_units=-1, validate=True, validate_epochs=1, graph_type='_nn', integrator='rk4',
                 pre_load_graphs=True, data_loader_workers=2, smooth_lr_decay=False, target_step=1, cpu=False, experiment_dir="", log_dir="runs", resume_checkpoint="", save_after_time=0):
     # Track time for saving after x seconds
     start_time_for_save = time.monotonic()
@@ -171,6 +180,9 @@ def train_model(model_type="DeltaGN", dataset="3_particles_gravity", learning_ra
     elif model_type == "HierarchicalHOGN":
         model = HierarchicalHOGN(box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, integrator=integrator, simulation_type=simulation_type)
         integrator_model = True
+    elif model_type == "HierarchicalHOGN":
+        model = GNSTODE(box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, integrator=integrator, simulation_type=simulation_type)
+        integrator_model = True
 
     device = torch.device("cuda:0" if ((not cpu) and torch.cuda.is_available()) else "cpu")
     model.to(device)
@@ -187,6 +199,7 @@ def train_model(model_type="DeltaGN", dataset="3_particles_gravity", learning_ra
         # All possible n*(n-1) are modeled as present - matrix shape (n-1) x n
         # Repeated for each sample in the batch (final size: batch x n(n-1) x n)
         R_s, R_r = full_graph_senders_and_recievers(n_particles, batch_size=batch_size, device=device)
+
 
     # Build a tensor of step sizes for each sample in the batch
     dt = torch.Tensor([time_step]).to(device).unsqueeze(0) * target_step

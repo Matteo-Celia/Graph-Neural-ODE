@@ -14,7 +14,7 @@ import string
 from scipy.stats import truncnorm
 
 from visualize import plot_trajectory, plot_energies
-from util import create_folder, recreate_folder, pbc_diff
+from utils import create_folder, recreate_folder, pbc_diff
 
 
 def build_nearest_neighbour_graph(filename, trajectory_path, box_size, neighbour_count):
