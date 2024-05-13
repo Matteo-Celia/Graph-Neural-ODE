@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-import moduel
+import model
 import utils
 
 def get_graph_data_dicts(num_nodes, num_edges):
