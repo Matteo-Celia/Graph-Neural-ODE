@@ -30,7 +30,8 @@ if __name__ == '__main__':
     
     graph_dicts = get_graph_data_dicts(num_nodes=9, num_edges=25)
     input_graphs = utils_np.data_dicts_to_graphs_tuple(graph_dicts)
-
+    print("graph dicts:")
+    print(graph_dicts)
     print('input_graphs')
     print(input_graphs)
 
