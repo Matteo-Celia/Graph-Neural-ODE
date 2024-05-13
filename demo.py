@@ -32,7 +32,7 @@ if __name__ == '__main__':
     input_graphs = utils_np.data_dicts_to_graphs_tuple(graph_dicts)
 
     print('input_graphs')
-    print(input_graphs.nodes[0])
+    print(input_graphs)
 
     # graph_network = modules.GraphNetwork(input_graphs)
 
