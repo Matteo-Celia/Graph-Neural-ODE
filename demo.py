@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 #import model
-import utils
+import utils_np
 
 def get_graph_data_dicts(num_nodes, num_edges):
     GLOBAL_SIZE = 4
@@ -29,7 +29,7 @@ def get_graph_data_dicts(num_nodes, num_edges):
 if __name__ == '__main__':
     
     graph_dicts = get_graph_data_dicts(num_nodes=9, num_edges=25)
-    input_graphs = utils.data_dicts_to_graphs_tuple(graph_dicts)
+    input_graphs = utils_np.data_dicts_to_graphs_tuple(graph_dicts)
 
     print('input_graphs')
     print(input_graphs)
