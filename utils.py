@@ -40,7 +40,7 @@ from __future__ import print_function
 
 import collections
 
-from graph_nets import graphs
+import graphs
 import networkx as nx
 import numpy as np
 from six.moves import range
