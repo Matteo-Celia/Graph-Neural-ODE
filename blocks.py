@@ -41,7 +41,7 @@ class Aggregator(nn.Module):
         else:
             raise AttributeError("invalid parameter `mode`")
         N_edges, N_features = edges.shape
-        N_nodes=nodes.shape[0]
+        N_nodes = nodes.shape[0]
         aggrated_list = []
         for i in range(N_nodes):
             aggrated = edges[indeces == i]

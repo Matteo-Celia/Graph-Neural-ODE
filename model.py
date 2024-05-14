@@ -16,9 +16,9 @@ class GraphInteractionNetwork(nn.Module):
     def __init__(self,graph):
         super(GraphInteractionNetwork,self).__init__()
 
-        self._edge_block = blocks.EdgeBlock(graph)
-        self._node_block = blocks.NodeBlock(graph)
-        self._global_block = blocks.GlobalBlock(graph)
+        self._edge_block = blocks.EdgeBlock(graph, use_globals=False)
+        self._node_block = blocks.NodeBlock(graph, use_sent_edges=False, use_globals=False)
+        
 
     def forward(self, graph):
 
@@ -235,6 +235,7 @@ class GNSTODE(nn.module):
             node_input_dim = 3 # (mass, px, py)
 
         self.gin = InteractionNetwork()
+        
         self.spatial_model = ODEBlock(input_dim=2*node_input_dim+2, output_dim=edge_output_dim, softplus=True, box_size=box_size) # input dim: sender and reciever node features  + disntace vector
 
         self.temporal_model = NodeModel(input_dim=node_input_dim+edge_output_dim, output_dim=node_output_dim, softplus=True) # input dim: input node features + embedded edge features

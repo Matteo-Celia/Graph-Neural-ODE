@@ -12,7 +12,7 @@ import string
 
 from data import TrajectoryDataset
 from model import PBC_MSE_loss, DeltaGN, HierarchicalDeltaGN, HOGN, HierarchicalHOGN, GNSTODE
-from utils import full_graph_senders_and_recievers, create_folder, collate_into_one_graph, data_dicts_to_graphs_tuple
+from utils import full_graph_senders_and_recievers, create_folder, collate_into_one_graph, data_dicts_to_graphs_tuple, pbc_diff
 from eval import evaluate_model
 
 def training_step_static_graph(model, data, R_s, R_r, dt, device, accumulate_steps, box_size):
@@ -51,6 +51,30 @@ def validation_step_static_graph(model, test_data, R_s, R_r, dt, device, box_siz
 def build_GraphTuple(inputs, R_s, R_r):
 
     data_dict_list = []
+
+    # compute edge features as distances between nodes
+    indices = np.arange(0, len(inputs.shape[1]))  
+    
+    
+    for i in range(inputs.shape[0]):
+
+        for j in range(len(inputs[i])):
+            dist_list = []
+            distances = np.linalg.norm(pbc_diff(inputs[i, indices, -4:-2], inputs[i, j, -4:-2][np.newaxis, :], box_size=6), axis=-1)
+            dist_list.append(np.array(distances))
+        
+        edges = [dist_list[R_s[i]][R_r[i]] for i in range(len(R_s))]
+        data_dict= {
+        "globals": None,
+        "nodes": inputs[i],
+        "edges": edges,  
+        "senders": R_s[i],
+        "receivers": R_r[i]
+        }
+
+        data_dict_list.append(dict(data_dict))
+    
+    return data_dict_list
 
 
 
