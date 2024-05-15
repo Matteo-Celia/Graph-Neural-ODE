@@ -115,11 +115,11 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
         targets = targets.to(device, non_blocking=True)
 
         #build GraphTuple object to pass to the model
-        #graph = build_GraphTuple(inputs, R_s, R_r)
+        graph = build_GraphTuple(inputs, R_s, R_r)
 
         # Forward pass (and time it)
         start_time = time.perf_counter_ns()
-        outputs = model(inputs, R_s, R_r, dt=dt)
+        outputs = model(graph, dt=dt)
         end_time = time.perf_counter_ns()
 
         # Backward

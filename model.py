@@ -15,14 +15,15 @@ from graphs import GraphsTuple
 class GraphInteractionNetwork(nn.Module):
     def __init__(self,graph):
         super(GraphInteractionNetwork,self).__init__()
-
+        self.graph = graph
         self._edge_block = blocks.EdgeBlock(graph, use_globals=False)
         self._node_block = blocks.NodeBlock(graph, use_sent_edges=False, use_globals=False)
         
 
-    def forward(self, graph):
+    def forward(self, h):
 
-        return self._node_block(self._edge_block(graph))
+        self.graph.replace(nodes=h)
+        return self._node_block(self._edge_block(self.graph)).nodes
 
 
 class RelationalModel(nn.Module):
@@ -234,14 +235,14 @@ class GNSTODE(nn.module):
         else:
             node_input_dim = 3 # (mass, px, py)
 
-        self.gin = InteractionNetwork()
+        self.gin = None
         
         self.spatial_model = ODEBlock(input_dim=2*node_input_dim+2, output_dim=edge_output_dim, softplus=True, box_size=box_size) # input dim: sender and reciever node features  + disntace vector
 
         self.temporal_model = NodeModel(input_dim=node_input_dim+edge_output_dim, output_dim=node_output_dim, softplus=True) # input dim: input node features + embedded edge features
 
 
-        # Linear layer to transform global embeddings to a Hamiltonian
+        # Linear layer to obtain Dt from H_L
         self.linear = nn.Linear(global_output_dim, 1)
 
         # Set box size
@@ -250,24 +251,8 @@ class GNSTODE(nn.module):
         # Set integrator to use
         self.integrator = integrator
 
-    def forward(self, state, R_s, R_r, dt):
+    def forward(self, graph, dt):
         # Transform inputs [m, x, y, vx, vy] to canonical coordinates [x,y,px,py]
-        mass_charge = state[:,:,:-4] # if no charge = [m]; with charge = [m, c]
-        momentum = state[:,:,-2:] * mass_charge[:,:,0].unsqueeze(2)
-        V = torch.cat([state[:,:,-4:-2], momentum], dim=2)
-        # Require grad to be able to compute partial derivatives
-        if not V.requires_grad:
-            V.requires_grad = True
+        self.gin = GraphInteractionNetwork(graph)
         
-        # Compute updated canonical coordinates
-        if self.integrator == 'rk4':
-            new_canonical_coordinates = self.rk4(dt, mass_charge, V, R_s, R_r)
-        elif self.integrator == 'euler':
-            new_canonical_coordinates = self.euler(dt, mass_charge, V, R_s, R_r)
-        else:
-            raise Exception
-        
-        # Convert back to original state format [x, y, vx, vy]
-        velocity = torch.div(new_canonical_coordinates[:,:,2:], mass_charge[:,:,0].unsqueeze(2))
-        new_state = torch.cat([new_canonical_coordinates[:,:,:2], velocity], dim=2)
         return new_state
