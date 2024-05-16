@@ -48,13 +48,17 @@ def validation_step_static_graph(model, test_data, R_s, R_r, dt, device, box_siz
 
     return test_loss.item()
 
-def build_GraphTuple(inputs, R_s, R_r):
+def build_GraphTuple(inputs, R_s, R_r, simulation_type):
 
     data_dict_list = []
 
     # compute edge features as distances between nodes
     indices = np.arange(0, len(inputs.shape[1]))  
     
+    if simulation_type == "coulomb":
+        feat_idx = list([0,1,4,5]) # (mass, charge, vx, vy)
+    else:
+        feat_idx = list([0,3,4]) # (mass, vx, vy) 
     
     for i in range(inputs.shape[0]):
 
@@ -66,7 +70,7 @@ def build_GraphTuple(inputs, R_s, R_r):
         edges = [dist_list[R_s[i]][R_r[i]] for i in range(len(R_s))]
         data_dict= {
         "globals": None,
-        "nodes": inputs[i],
+        "nodes": inputs[i,:,feat_idx],
         "edges": edges,  
         "senders": R_s[i],
         "receivers": R_r[i]
@@ -78,7 +82,7 @@ def build_GraphTuple(inputs, R_s, R_r):
 
 
 
-def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_size, graph_type):
+def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_size, graph_type, simulation_type):
 
     # if '_level_hierarchical' in graph_type:
     #     inputs, targets, R_s, R_r, assignment, V_super, super_graph = data
@@ -115,7 +119,7 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
     targets = targets.to(device, non_blocking=True)
 
     #build GraphTuple object to pass to the model
-    graph = build_GraphTuple(inputs, R_s, R_r)
+    graph = build_GraphTuple(inputs, R_s, R_r, simulation_type)
 
     # Forward pass (and time it)
     start_time = time.perf_counter_ns()
@@ -264,7 +268,7 @@ def train_model(model_type="DeltaGN", dataset="3_particles_gravity", learning_ra
             if graph_type == 'fully_connected':
                 loss_value, forward_pass_time = training_step_static_graph(model, data, R_s, R_r, dt, device, accumulate_steps, box_size)
             else:
-                loss_value, forward_pass_time = training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_size, graph_type)
+                loss_value, forward_pass_time = training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_size, graph_type, simulation_type)
             running_loss += loss_value
             forward_pass_times.append(forward_pass_time)
 
