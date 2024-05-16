@@ -80,93 +80,94 @@ def build_GraphTuple(inputs, R_s, R_r):
 
 def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_size, graph_type):
 
-    if '_level_hierarchical' in graph_type:
-        inputs, targets, R_s, R_r, assignment, V_super, super_graph = data
+    # if '_level_hierarchical' in graph_type:
+    #     inputs, targets, R_s, R_r, assignment, V_super, super_graph = data
 
-        # Push data to the GPU
-        inputs = inputs.to(device, non_blocking=True)
-        targets = targets.to(device, non_blocking=True)
-        R_s = R_s.to(device, non_blocking=True)
-        R_r = R_r.to(device, non_blocking=True)
-        assignment = [el.to(device, non_blocking=True) for el in assignment]
-        V_super = [el.to(device, non_blocking=True) for el in V_super]
-        super_graph = [el.to(device, non_blocking=True) for el in super_graph]
+    #     # Push data to the GPU
+    #     inputs = inputs.to(device, non_blocking=True)
+    #     targets = targets.to(device, non_blocking=True)
+    #     R_s = R_s.to(device, non_blocking=True)
+    #     R_r = R_r.to(device, non_blocking=True)
+    #     assignment = [el.to(device, non_blocking=True) for el in assignment]
+    #     V_super = [el.to(device, non_blocking=True) for el in V_super]
+    #     super_graph = [el.to(device, non_blocking=True) for el in super_graph]
 
-        # Forward pass (and time it)
-        start_time = time.perf_counter_ns()
-        outputs = model(inputs, R_s, R_r, assignment, V_super, super_graph, dt=dt)
-        end_time = time.perf_counter_ns()
-        loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size)
+    #     # Forward pass (and time it)
+    #     start_time = time.perf_counter_ns()
+    #     outputs = model(inputs, R_s, R_r, assignment, V_super, super_graph, dt=dt)
+    #     end_time = time.perf_counter_ns()
+    #     loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size)
 
-        # Backward
-        loss = loss / accumulate_steps
-        loss.backward()
-        return loss.item(), (end_time - start_time)
+    #     # Backward
+    #     loss = loss / accumulate_steps
+    #     loss.backward()
+    #     return loss.item(), (end_time - start_time)
 
-    else:
+    # else:
         # Get the inputs (inputs, targets, edge sender and reciever)
-        inputs, targets, R_s, R_r = data
+    inputs, targets, R_s, R_r = data
 
-        R_s = R_s.to(device, non_blocking=True)
-        R_r = R_r.to(device, non_blocking=True)
+    R_s = R_s.to(device, non_blocking=True)
+    R_r = R_r.to(device, non_blocking=True)
 
-        # Push data to the GPU
-        inputs = inputs.to(device, non_blocking=True)
-        targets = targets.to(device, non_blocking=True)
+    # Push data to the GPU
+    inputs = inputs.to(device, non_blocking=True)
+    targets = targets.to(device, non_blocking=True)
 
-        #build GraphTuple object to pass to the model
-        graph = build_GraphTuple(inputs, R_s, R_r)
+    #build GraphTuple object to pass to the model
+    graph = build_GraphTuple(inputs, R_s, R_r)
 
-        # Forward pass (and time it)
-        start_time = time.perf_counter_ns()
-        outputs = model(graph, dt=dt)
-        end_time = time.perf_counter_ns()
+    # Forward pass (and time it)
+    start_time = time.perf_counter_ns()
+    outputs = model(graph, dt=dt)
+    end_time = time.perf_counter_ns()
 
-        # Backward
-        loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size)
-        loss = loss / accumulate_steps
-        loss.backward()
-    
-        return loss.item(), (end_time - start_time)
+    # Backward
+    loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size)
+    loss = loss / accumulate_steps
+    loss.backward()
+
+    return loss.item(), (end_time - start_time)
 
 def validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_type):
 
-    if '_level_hierarchical' in graph_type:
-        inputs, targets, R_s, R_r, assignment, V_super, super_graph = test_data
+    # if '_level_hierarchical' in graph_type:
+    #     inputs, targets, R_s, R_r, assignment, V_super, super_graph = test_data
 
-        # Push data to the GPU
-        inputs = inputs.to(device, non_blocking=True)
-        targets = targets.to(device, non_blocking=True)
-        R_s = R_s.to(device, non_blocking=True)
-        R_r = R_r.to(device, non_blocking=True)
-        assignment = [el.to(device, non_blocking=True) for el in assignment]
-        V_super = [el.to(device, non_blocking=True) for el in V_super]
-        super_graph = [el.to(device, non_blocking=True) for el in super_graph]
+    #     # Push data to the GPU
+    #     inputs = inputs.to(device, non_blocking=True)
+    #     targets = targets.to(device, non_blocking=True)
+    #     R_s = R_s.to(device, non_blocking=True)
+    #     R_r = R_r.to(device, non_blocking=True)
+    #     assignment = [el.to(device, non_blocking=True) for el in assignment]
+    #     V_super = [el.to(device, non_blocking=True) for el in V_super]
+    #     super_graph = [el.to(device, non_blocking=True) for el in super_graph]
 
-        outputs = model(inputs, R_s, R_r, assignment, V_super, super_graph, dt=dt)
+    #     outputs = model(inputs, R_s, R_r, assignment, V_super, super_graph, dt=dt)
 
-        test_loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
+    #     test_loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
 
-        return test_loss.item()
+    #     return test_loss.item()
 
-    else:
+    # else:
 
         # Get the inputs (inputs, targets, edge sender and reciever)
-        inputs, targets, R_s, R_r = test_data
-        R_s = R_s.to(device, non_blocking=True)
-        R_r = R_r.to(device, non_blocking=True)
+    inputs, targets, R_s, R_r = test_data
+    R_s = R_s.to(device, non_blocking=True)
+    R_r = R_r.to(device, non_blocking=True)
 
-        # Push to GPU
-        inputs = inputs.to(device, non_blocking=True)
-        targets = targets.to(device, non_blocking=True)
+    # Push to GPU
+    inputs = inputs.to(device, non_blocking=True)
+    targets = targets.to(device, non_blocking=True)
+    
+    graph = build_GraphTuple(inputs, R_s, R_r)
+    # Get outputs
+    outputs = model(graph, dt=dt)
 
-        # Get outputs
-        outputs = model(inputs, R_s, R_r, dt=dt)
+    # Get loss
+    test_loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
 
-        # Get loss
-        test_loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
-
-        return test_loss.item()
+    return test_loss.item()
 
 def train_model(model_type="DeltaGN", dataset="3_particles_gravity", learning_rate=1e-3, lr_decay=0.97725, batch_size=100, epochs=200, accumulate_steps=1, model_dir="models", data_dir="data",
                 hidden_units=-1, validate=True, validate_epochs=1, graph_type='_nn', integrator='rk4',
@@ -190,23 +191,11 @@ def train_model(model_type="DeltaGN", dataset="3_particles_gravity", learning_ra
     time_step = train_set.time_step
     n_particles = train_set.n_particles
     simulation_type = train_set.simulation_type
+    traj_len = train_set.trajectory_len
 
-    # Flag models that use integrators
-    integrator_model = False
+    
+    model = GNSTODE(n_particles, traj_len, box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, integrator=integrator, simulation_type=simulation_type)
 
-    if model_type == "DeltaGN":
-        model = DeltaGN(box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, simulation_type=simulation_type)
-    elif model_type == "HierarchicalDeltaGN":
-        model = HierarchicalDeltaGN(box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, simulation_type=simulation_type)
-    elif model_type == "HOGN":
-        model = HOGN(box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, global_output_dim=hidden_units, integrator=integrator, simulation_type=simulation_type)
-        integrator_model = True
-    elif model_type == "HierarchicalHOGN":
-        model = HierarchicalHOGN(box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, integrator=integrator, simulation_type=simulation_type)
-        integrator_model = True
-    elif model_type == "HierarchicalHOGN":
-        model = GNSTODE(box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, integrator=integrator, simulation_type=simulation_type)
-        integrator_model = True
 
     device = torch.device("cuda:0" if ((not cpu) and torch.cuda.is_available()) else "cpu")
     model.to(device)
@@ -218,34 +207,34 @@ def train_model(model_type="DeltaGN", dataset="3_particles_gravity", learning_ra
     n_iter = 0
     running_loss = 0.0
 
-    if graph_type == 'fully_connected':
-        # Build graph - R_s one hot encoding of edge sender id, R_r: one hot encoding of reciever id
-        # All possible n*(n-1) are modeled as present - matrix shape (n-1) x n
-        # Repeated for each sample in the batch (final size: batch x n(n-1) x n)
-        R_s, R_r = full_graph_senders_and_recievers(n_particles, batch_size=batch_size, device=device)
+    # if graph_type == 'fully_connected':
+    #     # Build graph - R_s one hot encoding of edge sender id, R_r: one hot encoding of reciever id
+    #     # All possible n*(n-1) are modeled as present - matrix shape (n-1) x n
+    #     # Repeated for each sample in the batch (final size: batch x n(n-1) x n)
+    #     R_s, R_r = full_graph_senders_and_recievers(n_particles, batch_size=batch_size, device=device)
 
 
     # Build a tensor of step sizes for each sample in the batch
     dt = torch.Tensor([time_step]).to(device).unsqueeze(0) * target_step
 
     # Use current/start time to identify saved model and log dir
-    start_time = time.strftime("%Y%m%d-%H%M%S")
-
-    if len(resume_checkpoint) > 0:
-        print('Resuming checkpoint')
-        model_name = resume_checkpoint.replace('_checkpoint.tar', '')
-        checkpoint = torch.load(os.path.join(model_dir, experiment_dir, dataset, resume_checkpoint))
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        starting_epoch = checkpoint['epoch']
-        n_iter = starting_epoch * len(train_loader)
-    else:
-        # Create model filename to use for saved model params and tensorboard log dir
-        rand_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
-        model_name = f"{model_type}{f'_{integrator}' if integrator_model else ''}_lr_{learning_rate}_decay_{lr_decay}_epochs_{epochs}_batch_size_{batch_size}_accumulate_steps_{accumulate_steps}{f'_hidden_units_{hidden_units}' if hidden_units > 0 else ''}_graph_{graph_type}_target_step_{target_step}_{start_time}_{rand_string}"
-        starting_epoch = 0
-
+    #start_time = time.strftime("%Y%m%d-%H%M%S")
+    model_name = "GNSTODE"
+    # if len(resume_checkpoint) > 0:
+    #     print('Resuming checkpoint')
+    #     model_name = resume_checkpoint.replace('_checkpoint.tar', '')
+    #     checkpoint = torch.load(os.path.join(model_dir, experiment_dir, dataset, resume_checkpoint))
+    #     model.load_state_dict(checkpoint['model_state_dict'])
+    #     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    #     scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+    #     starting_epoch = checkpoint['epoch']
+    #     n_iter = starting_epoch * len(train_loader)
+    # else:
+    #     # Create model filename to use for saved model params and tensorboard log dir
+    #     rand_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+    #     model_name = f"{model_type}{f'_{integrator}' if integrator_model else ''}_lr_{learning_rate}_decay_{lr_decay}_epochs_{epochs}_batch_size_{batch_size}_accumulate_steps_{accumulate_steps}{f'_hidden_units_{hidden_units}' if hidden_units > 0 else ''}_graph_{graph_type}_target_step_{target_step}_{start_time}_{rand_string}"
+    #     starting_epoch = 0
+    starting_epoch = 0
     # Setup direcotries for logs and models
     if len(experiment_dir) > 0:
         logdir=os.path.join(log_dir, experiment_dir, dataset, model_name)

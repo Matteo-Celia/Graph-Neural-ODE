@@ -422,7 +422,7 @@ def generate_hierarchical_graphs(dataset="dataset", levels=3, n_workers=1, data_
 
 
 class TrajectoryDataset(Dataset):
-    def __init__(self, folder_path, split='train', rollout=False, graph_type=None, pre_load_graphs=True, target_step=1):
+    def __init__(self, folder_path, split='train', rollout=True, graph_type=None, pre_load_graphs=True, target_step=1):
         self.folder_path = folder_path
         self.split = split
         self.split_folder = os.path.join(folder_path, split)
