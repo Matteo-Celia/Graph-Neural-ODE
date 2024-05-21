@@ -26,13 +26,15 @@ class GraphInteractionNetwork(nn.Module):
 
     def forward(self, t, h):
 
-        #recompute graph based on h
+        
         #nodes = h.reshape(-1,self.nodedim)
+        #recompute graph based on h
         R_s, R_r = build_senders_receivers(h)
         self.graph = build_GraphTuple(h, R_s, R_r)
         
         new_nodes = self._node_block(self._edge_block(self.graph)).nodes
-        return split_matrix_np(new_nodes,len(self.graph.n_node), self.n_particles)
+        #batch nodes' features as (trajectory_len,num_nodes,nodedim)
+        return split_matrix_np(new_nodes,len(self.graph.n_node), self.n_particles) 
 
 
 
@@ -82,8 +84,10 @@ class GNSTODE(nn.module):
         nn.Linear(self.featdim, 64),
         nn.Tanh(), 
         nn.Linear(64, self.featdim))
- 
         self.F = UpdateFunction(featdim=self.featdim)
+        self.spatial_model = NeuralODE(self.gin, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3).to(self.device)
+        self.temporal_model = NeuralODE(self.F, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3).to(self.device)
+        
         
 
     def forward(self, input_trajectory, dt):#change just inputs,R_s and R_r graph is built inside the gin
@@ -92,8 +96,7 @@ class GNSTODE(nn.module):
         
         Xt = input_trajectory
         #spatial processing
-        self.spatial_model = NeuralODE(self.gin, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3).to(self.device)
-        #maybe needed to batch Xr before NODE the same way HL is batched afterwards
+        
         HL = self.spatial_model(Xt,self.L_span)
         
         ##split matrix based on the nodes of each graph and then flatten to build a matrix: (trajectory_len,num_nodes*nodedim) 
@@ -105,8 +108,7 @@ class GNSTODE(nn.module):
 
         #temporal processing
         self.F.Dt = Dt
-        #Xt_split = split_matrix_np(Xt,len(num_nodes), self.n_particles)
-        self.temporal_model = NeuralODE(self.F, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3).to(self.device)
+        
         Xtpred = self.temporal_model(Xt,self.t_span)
         Xtpreds.append(Xtpred)
 

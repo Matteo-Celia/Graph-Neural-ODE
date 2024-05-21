@@ -5,12 +5,12 @@ import shutil
 import argparse
 import re
 
-from data import TrajectoryDataset
+from data import TrajectoryDataset, TrajectoryDataset_New
 from model import GNSTODE
 from utils import pbc_rms_error, pbc_mean_relative_energy_error, recreate_folder, create_folder, full_graph_senders_and_recievers, nn_graph_senders_and_recievers, hierarchical_graph_senders_and_recievers, collate_into_one_graph
 
 
-def evaluate_model(model_file="", dataset="20_particles", model_dataset="", graph_type="", model_dir="models", data_dir="data", experiment_dir="", pre_load_graphs=True, start_id=0, end_id=-1):
+def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph_type="", model_dir="models", data_dir="data", experiment_dir="", pre_load_graphs=True, start_id=0, end_id=-1):
 
     # Set evaluation dataset as model dataset (dataset model was trained on) if no model dataset was specified
     if len(model_dataset) < 1:
@@ -68,7 +68,7 @@ def evaluate_model(model_file="", dataset="20_particles", model_dataset="", grap
     batch_size = 1
     
     # Load test data set
-    test_set = TrajectoryDataset(folder_path=os.path.join(data_dir, dataset), split='test', rollout=True, graph_type=graph_type, target_step=target_step, pre_load_graphs=pre_load_graphs)
+    test_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='test', rollout=True, graph_type=graph_type, target_step=target_step, pre_load_graphs=pre_load_graphs)
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, collate_fn=collate_into_one_graph)
 
     # Get parameters form dataset
@@ -83,7 +83,7 @@ def evaluate_model(model_file="", dataset="20_particles", model_dataset="", grap
     # if model_type == "DeltaGN":
     #     model = DeltaGN(box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, simulation_type=simulation_type)
     if model_type == "GNSTODE":
-        model = GNSTODE(n_particles, simulation_type=simulation_type)
+        model = GNSTODE(n_particles, integrator=integrator,simulation_type=simulation_type)
 
     model.load_state_dict(torch.load(model_path))
 
@@ -136,20 +136,20 @@ def evaluate_model(model_file="", dataset="20_particles", model_dataset="", grap
             #     raise ValueError('Graph type not recognized')
 
             # Log the predicted trajecotry
-            output_trajectory = np.zeros((inputs.shape[1]+1, inputs.shape[2], inputs.shape[3]))
-            output_trajectory[0] = inputs[0][0].numpy()
+            output_trajectory = np.zeros((inputs.shape[0]+1, inputs.shape[1], inputs.shape[2]))
+            output_trajectory[0] = inputs[0].numpy()
 
             # Forward pass 
-            current_state = inputs[0][0].unsqueeze(0)
+            current_state = inputs[0].unsqueeze(0)
             current_state = current_state.to(device)
-            for j in range(inputs.shape[1]):
+            for j in range(inputs.shape[0]):
                 output = model(current_state, dt)
                 current_state = torch.cat([current_state[:,:,:-4], output], dim = 2).detach() # Detach to stop graph unroll in next loop iteration 
                 
                 output_trajectory[j+1, :, :] = current_state.cpu().detach().numpy() # [timesteps, particles, state]; state = [m,x,y,v_x,v_y]
 
             
-            print("RMSE for trajectory %i: %f" % (i , pbc_rms_error(output_trajectory[1:,:,1:], targets.cpu().numpy()[0][:,:,1:], box_size=box_size)))
+            print("RMSE for trajectory %i: %f" % (i , pbc_rms_error(output_trajectory[1:,:,1:], targets.cpu().numpy()[:,:,1:], box_size=box_size)))
         
             # Save the predicted trajectory
             output_filename = os.path.join(output_folder_path,"predicted_trajectory_{i}.npy".format(i=i))

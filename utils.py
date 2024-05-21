@@ -117,6 +117,29 @@ def build_senders_receivers(trajectory, neighbour_count = 15, box_size=6):
     #return senders , receivers
     return graph[:,:,0], graph[:,:,1]
 
+# Ensure x and y stay inside the box and follow PBC
+def apply_PBC_to_coordinates(coordinates, box_size=6):
+    # Only apply to coordinate columns
+    coordinates[:,:,-4:-2][coordinates[:,:,-4:-2] >= box_size/2] -= box_size
+    coordinates[:,:,-4:-2][coordinates[:,:,-4:-2] < -box_size/2] += box_size
+    return coordinates
+
+def apply_PBC_to_distances(distances, box_size=6):
+    # Only apply to postion columns
+    distances[:,:,-4:-2][distances[:,:,-4:-2] > box_size/2] -= box_size
+    distances[:,:,-4:-2][distances[:,:,-4:-2] <= -box_size/2] += box_size
+    return distances
+
+# Custom MSE loss that takes periodic boundry conditions into account
+def PBC_MSE_loss(output, target, box_size=6):
+    # Get difference
+    error = output - target
+    # Deal with periodic boundry conditions
+    error = apply_PBC_to_distances(error, box_size=box_size)
+    # Get MSE
+    loss = torch.mean((error)**2)
+    return loss
+
 def pbc_rms_error(predictions, targets, box_size=6):
     loss = np.sqrt(np.mean(pbc_diff(predictions, targets, box_size=box_size)**2))
     return loss

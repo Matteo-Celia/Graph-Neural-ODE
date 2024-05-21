@@ -10,9 +10,9 @@ import argparse
 import random
 import string
 
-from data import TrajectoryDataset
-from model import PBC_MSE_loss, DeltaGN, HierarchicalDeltaGN, HOGN, HierarchicalHOGN, GNSTODE
-from utils import full_graph_senders_and_recievers, create_folder, collate_into_one_graph, data_dicts_to_graphs_tuple, pbc_diff, build_GraphTuple
+from data import TrajectoryDataset, TrajectoryDataset_New
+from model import  GNSTODE
+from utils import PBC_MSE_loss,full_graph_senders_and_recievers, create_folder, collate_into_one_graph, data_dicts_to_graphs_tuple, pbc_diff, build_GraphTuple
 from eval import evaluate_model
 
 def training_step_static_graph(model, data, R_s, R_r, dt, device, accumulate_steps, box_size):
@@ -79,10 +79,10 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
 
     # else:
         # Get the inputs (inputs, targets, edge sender and reciever)
-    inputs, targets, R_s, R_r = data
+    inputs, targets= data
 
-    R_s = R_s.to(device, non_blocking=True)
-    R_r = R_r.to(device, non_blocking=True)
+    #R_s = R_s.to(device, non_blocking=True)
+    #R_r = R_r.to(device, non_blocking=True)
 
     # Push data to the GPU
     inputs = inputs.to(device, non_blocking=True)
@@ -126,9 +126,9 @@ def validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_
     # else:
 
         # Get the inputs (inputs, targets, edge sender and reciever)
-    inputs, targets, R_s, R_r = test_data
-    R_s = R_s.to(device, non_blocking=True)
-    R_r = R_r.to(device, non_blocking=True)
+    inputs, targets = test_data
+    #R_s = R_s.to(device, non_blocking=True)
+    #R_r = R_r.to(device, non_blocking=True)
 
     # Push to GPU
     inputs = inputs.to(device, non_blocking=True)
@@ -153,11 +153,11 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
     torch.set_num_threads(torch.get_num_threads())
 
     # Load training dataset
-    train_set = TrajectoryDataset(folder_path=os.path.join(data_dir, dataset), split='train', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
+    train_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='train', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=data_loader_workers, collate_fn=collate_into_one_graph, pin_memory=True)
 
     # Load validation dataset
-    validation_set = TrajectoryDataset(folder_path=os.path.join(data_dir, dataset), split='validation', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
+    validation_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='validation', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
     validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=batch_size, shuffle=False, num_workers=data_loader_workers, collate_fn=collate_into_one_graph, pin_memory=True)
 
     # Get parameters form dataset
@@ -171,7 +171,7 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
     model = GNSTODE(n_particles, traj_len, box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, integrator=integrator, simulation_type=simulation_type)
 
 
-    device = torch.device("cuda:0" if ((not cpu) and torch.cuda.is_available()) else "cpu")
+    device = torch.device("cuda" if ((not cpu) and torch.cuda.is_available()) else "cpu")#cuda:0
     model.to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)#3e-4
@@ -192,8 +192,9 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
     dt = torch.Tensor([time_step]).to(device).unsqueeze(0) * target_step
 
     # Use current/start time to identify saved model and log dir
-    #start_time = time.strftime("%Y%m%d-%H%M%S")
-    model_name = "GNSTODE"
+    rand_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+    start_time = time.strftime("%Y%m%d-%H%M%S")
+    model_name = f"{model_type}{f'_{integrator}' if integrator else ''}_lr_{learning_rate}_decay_{lr_decay}_epochs_{epochs}_batch_size_{batch_size}_accumulate_steps_{accumulate_steps}{f'_hidden_units_{hidden_units}' if hidden_units > 0 else ''}_graph_{graph_type}_target_step_{target_step}_{start_time}_{rand_string}"
     # if len(resume_checkpoint) > 0:
     #     print('Resuming checkpoint')
     #     model_name = resume_checkpoint.replace('_checkpoint.tar', '')
@@ -285,8 +286,8 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
             for j, test_data in enumerate(validation_loader, 0):
                 # Ensure no grad is left before validation step
                 optimizer.zero_grad()
-                if model_type == "NewMultiLevelHOGNDown5":
-                    torch.cuda.empty_cache()
+                #if model_type == "NewMultiLevelHOGNDown5":
+                #    torch.cuda.empty_cache()
                 # Do a validation step
                 # if graph_type == 'fully_connected':
                 #     loss_value =  validation_step_static_graph(model, test_data, R_s, R_r, dt, device, box_size)
