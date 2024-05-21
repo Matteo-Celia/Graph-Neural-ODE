@@ -101,26 +101,25 @@ class EdgeBlock(nn.Module):
 class NodeBlock(nn.Module):
 
     def __init__(self,
-                 graph,
+                 nodedim, 
+                 edgedim,
                  use_received_edges=True,
                  use_sent_edges=False,
                  use_nodes=True,
-                 use_globals=True):
+                 use_globals=False):
         super(NodeBlock, self).__init__()
         self._use_received_edges = use_received_edges
         self._use_sent_edges = use_sent_edges
         self._use_nodes = use_nodes
         self._use_globals = use_globals
         N_features = 0
-        pre_features=graph.nodes.shape[-1]
+        pre_features = nodedim
         if self._use_nodes:
-            N_features += graph.nodes.shape[-1]
+            N_features += nodedim
         if self._use_received_edges:
-            N_features += graph.edges.shape[-1]
+            N_features += edgedim
         if self._use_sent_edges:
-            N_features += graph.edges.shape[-1]
-        if self._use_globals:
-            N_features += graph.globals.shape[-1]
+            N_features += edgedim
         self.linear = nn.Linear(N_features, pre_features)
         self._received_edges_aggregator = Aggregator('receivers')
         self._sent_edges_aggregator = Aggregator('senders')

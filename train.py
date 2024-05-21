@@ -12,7 +12,7 @@ import string
 
 from data import TrajectoryDataset
 from model import PBC_MSE_loss, DeltaGN, HierarchicalDeltaGN, HOGN, HierarchicalHOGN, GNSTODE
-from utils import full_graph_senders_and_recievers, create_folder, collate_into_one_graph, data_dicts_to_graphs_tuple, pbc_diff
+from utils import full_graph_senders_and_recievers, create_folder, collate_into_one_graph, data_dicts_to_graphs_tuple, pbc_diff, build_GraphTuple
 from eval import evaluate_model
 
 def training_step_static_graph(model, data, R_s, R_r, dt, device, accumulate_steps, box_size):
@@ -48,37 +48,7 @@ def validation_step_static_graph(model, test_data, R_s, R_r, dt, device, box_siz
 
     return test_loss.item()
 
-def build_GraphTuple(inputs, R_s, R_r, simulation_type):
 
-    data_dict_list = []
-
-    # compute edge features as distances between nodes
-    indices = np.arange(0, len(inputs.shape[1]))  
-    
-    if simulation_type == "coulomb":
-        feat_idx = list([0,1,4,5]) # (mass, charge, vx, vy)
-    else:
-        feat_idx = list([0,3,4]) # (mass, vx, vy) 
-    
-    for i in range(inputs.shape[0]):
-
-        for j in range(len(inputs[i])):
-            dist_list = []
-            distances = np.linalg.norm(pbc_diff(inputs[i, indices, -4:-2], inputs[i, j, -4:-2][np.newaxis, :], box_size=6), axis=-1)
-            dist_list.append(np.array(distances))
-        
-        edges = [dist_list[R_s[i]][R_r[i]] for i in range(len(R_s))]
-        data_dict= {
-        "globals": None,
-        "nodes": inputs[i,:,feat_idx],
-        "edges": edges,  
-        "senders": R_s[i],
-        "receivers": R_r[i]
-        }
-
-        data_dict_list.append(dict(data_dict))
-    
-    return data_dict_list
 
 
 
@@ -119,11 +89,11 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
     targets = targets.to(device, non_blocking=True)
 
     #build GraphTuple object to pass to the model
-    graph = build_GraphTuple(inputs, R_s, R_r, simulation_type)
+    #graphs = build_GraphTuple(inputs, R_s, R_r, simulation_type)
 
     # Forward pass (and time it)
     start_time = time.perf_counter_ns()
-    outputs = model(graph, dt=dt)
+    outputs = model(inputs, dt=dt)
     end_time = time.perf_counter_ns()
 
     # Backward
@@ -164,16 +134,16 @@ def validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_
     inputs = inputs.to(device, non_blocking=True)
     targets = targets.to(device, non_blocking=True)
     
-    graph = build_GraphTuple(inputs, R_s, R_r)
+    #graph = build_GraphTuple(inputs, R_s, R_r)
     # Get outputs
-    outputs = model(graph, dt=dt)
+    outputs = model(inputs, dt=dt)
 
     # Get loss
     test_loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
 
     return test_loss.item()
 
-def train_model(model_type="DeltaGN", dataset="3_particles_gravity", learning_rate=1e-3, lr_decay=0.97725, batch_size=100, epochs=200, accumulate_steps=1, model_dir="models", data_dir="data",
+def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_rate=1e-3, lr_decay=0.97725, batch_size=100, epochs=200, accumulate_steps=1, model_dir="models", data_dir="data",
                 hidden_units=-1, validate=True, validate_epochs=1, graph_type='_nn', integrator='rk4',
                 pre_load_graphs=True, data_loader_workers=2, smooth_lr_decay=False, target_step=1, cpu=False, experiment_dir="", log_dir="runs", resume_checkpoint="", save_after_time=0):
     # Track time for saving after x seconds
@@ -260,15 +230,13 @@ def train_model(model_type="DeltaGN", dataset="3_particles_gravity", learning_ra
     forward_pass_times = []
 
     print("Training model %s on %s dataset" % (model_name, dataset))
-
+    model.train() #needed?
     for epoch in range(starting_epoch, epochs):
         optimizer.zero_grad()
         for i, data in enumerate(train_loader, 0):
             # Do one training step and get loss value
-            if graph_type == 'fully_connected':
-                loss_value, forward_pass_time = training_step_static_graph(model, data, R_s, R_r, dt, device, accumulate_steps, box_size)
-            else:
-                loss_value, forward_pass_time = training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_size, graph_type, simulation_type)
+            
+            loss_value, forward_pass_time = training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_size, graph_type, simulation_type)
             running_loss += loss_value
             forward_pass_times.append(forward_pass_time)
 
@@ -320,10 +288,10 @@ def train_model(model_type="DeltaGN", dataset="3_particles_gravity", learning_ra
                 if model_type == "NewMultiLevelHOGNDown5":
                     torch.cuda.empty_cache()
                 # Do a validation step
-                if graph_type == 'fully_connected':
-                    loss_value =  validation_step_static_graph(model, test_data, R_s, R_r, dt, device, box_size)
-                else:
-                    loss_value = validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_type)
+                # if graph_type == 'fully_connected':
+                #     loss_value =  validation_step_static_graph(model, test_data, R_s, R_r, dt, device, box_size)
+                # else:
+                loss_value = validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_type)
                 running_test_loss += loss_value
             model.train()
             for p in model.parameters():

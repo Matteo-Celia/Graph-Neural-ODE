@@ -11,26 +11,35 @@ from torch.utils.data import Dataset, DataLoader
 import blocks
 from random import randint
 from graphs import GraphsTuple
+from utils import split_matrix_np, build_GraphTuple, build_senders_receivers
 
 class GraphInteractionNetwork(nn.Module):
-    def __init__(self,graph):
+    def __init__(self, n_particles, nodedim, edgedim):
         super(GraphInteractionNetwork,self).__init__()
-        self.graph = graph
-        self._edge_block = blocks.EdgeBlock(graph, use_globals=False)
-        self._node_block = blocks.NodeBlock(graph, use_sent_edges=False, use_globals=False)
+        self.graph = None
+        self.n_particles = n_particles
+        self.nodedim = nodedim
+        self._edgedim = edgedim
+        self._edge_block = blocks.EdgeBlock(nodedim, edgedim, use_globals=False)
+        self._node_block = blocks.NodeBlock(nodedim, edgedim, use_sent_edges=False, use_globals=False)
         
 
     def forward(self, t, h):
 
-        self.graph.replace(nodes=h)
-        return self._node_block(self._edge_block(self.graph)).nodes
+        #recompute graph based on h
+        #nodes = h.reshape(-1,self.nodedim)
+        R_s, R_r = build_senders_receivers(h)
+        self.graph = build_GraphTuple(h, R_s, R_r)
+        
+        new_nodes = self._node_block(self._edge_block(self.graph)).nodes
+        return split_matrix_np(new_nodes,len(self.graph.n_node), self.n_particles)
 
 
 
 class UpdateFunction(nn.Module):
-    def __init__(self, t, Dt, featdim):
+    def __init__(self, Dt, featdim):
         super(UpdateFunction,self).__init__()
-        self.t = t
+        self.t = 0
         self.Dt = Dt
         self.linear = nn.Linear(featdim, featdim)
 
@@ -43,51 +52,68 @@ class GNSTODE(nn.module):
     #at each forward pass:
     
     
-    def __init__(self, n_particles, traj_len, space_int=100, temp_int=100, box_size=6, integrator='rk4', simulation_type='gravity'):
+    def __init__(self, n_particles, space_int=100, temp_int=100, box_size=6, integrator='rk4', simulation_type='gravity'):
         super(GNSTODE, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
         self.simulation_type = simulation_type
         # Set number of node features, excluding the position (x,y)
         if self.simulation_type == 'coulomb':
-            node_input_dim = 4 # (mass, charge, px, py)
+            nodedim = 6 # (mass, x, y, charge, px, py)
         else:
-            node_input_dim = 3 # (mass, px, py)
-        self.L_span = torch.linspace(0, 1, space_int)
-        self.t_span = torch.linspace(0, 1, temp_int)
-        self.gin = None
-        T = len(traj_len)
-        self.featdim = node_input_dim*n_particles*T
-        # Linear layer to obtain Dt from H_L
-        self.linear = nn.Linear(self.featdim, self.featdim)
-        self.featdimTraj = node_input_dim*n_particles
-        # Set box size
-        self.box_size = box_size
-        self.NN = nn.Sequential(
-        nn.Linear(self.featdimTraj, 64),
-        nn.Tanh(), 
-        nn.Linear(64, self.featdimTraj))
+            nodedim = 5 # (mass, x, y, px, py)
+        edgedim = 1 #distance between particles
+        self.n_particles = n_particles
         # Set integrator to use
         self.integrator = integrator
 
-    def forward(self, graph):
+        self.L_span = torch.linspace(0, 1, space_int)
+        self.t_span = torch.linspace(0, 1, temp_int)
         
-        Xt = graph.nodes
-        self.gin = GraphInteractionNetwork(graph)
+        self.featdim = nodedim*n_particles
+        # Linear layer to obtain Dt from H_L
+        #self.linear = nn.Linear(self.featdim, self.featdim)
         
-        self.spatial_model = NeuralODE(self.gin, sensitivity='adjoint', solver='tsit5', interpolator=None, atol=1e-3, rtol=1e-3).to(self.device)
-        H = self.spatial_model(Xt,self.L_span)
-        Dt = []
+        # Set box size
+        self.box_size = box_size
 
-        for i in H.shape[0]:
-            Dt.append(self.NN(H[i]))
+        self.gin = GraphInteractionNetwork(n_particles,nodedim, edgedim)
+        self.NN = nn.Sequential(
+        nn.Linear(self.featdim, 64),
+        nn.Tanh(), 
+        nn.Linear(64, self.featdim))
+ 
+        self.F = UpdateFunction(featdim=self.featdim)
+        
+
+    def forward(self, input_trajectory, dt):#change just inputs,R_s and R_r graph is built inside the gin
+        
+        #num_nodes = input_trajectory.shape[1]
+        
+        Xt = input_trajectory
+        #spatial processing
+        self.spatial_model = NeuralODE(self.gin, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3).to(self.device)
+        #maybe needed to batch Xr before NODE the same way HL is batched afterwards
+        HL = self.spatial_model(Xt,self.L_span)
+        
+        ##split matrix based on the nodes of each graph and then flatten to build a matrix: (trajectory_len,num_nodes*nodedim) 
+        #HL_split = split_matrix_np(HL,len(num_nodes), self.n_particles) 
+        
+        Dt = self.NN(HL)
 
         Xtpreds = []
 
-        for i,t in enumerate(self.traj_len):
-            F = UpdateFunction(t,Dt[i],self.featdim)
-            self.temporal_model = NeuralODE(F, sensitivity='adjoint', solver='tsit5', interpolator=None, atol=1e-3, rtol=1e-3).to(self.device)
-            Xtpred = self.temporal_model(Xt[i],self.t_span)
-            Xtpreds.append(Xtpred)
+        #temporal processing
+        self.F.Dt = Dt
+        #Xt_split = split_matrix_np(Xt,len(num_nodes), self.n_particles)
+        self.temporal_model = NeuralODE(self.F, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3).to(self.device)
+        Xtpred = self.temporal_model(Xt,self.t_span)
+        Xtpreds.append(Xtpred)
 
-        return Xtpreds
+        # for i,t in enumerate(self.traj_len):
+            
+        #     self.temporal_model = NeuralODE(F, sensitivity='adjoint', solver='tsit5', interpolator=None, atol=1e-3, rtol=1e-3).to(self.device)
+        #     Xtpred = self.temporal_model(Xt[i],self.t_span)
+        #     Xtpreds.append(Xtpred)
+
+        return np.array(Xtpreds)
