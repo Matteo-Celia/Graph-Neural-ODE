@@ -39,10 +39,10 @@ class GraphInteractionNetwork(nn.Module):
 
 
 class UpdateFunction(nn.Module):
-    def __init__(self, Dt, featdim):
+    def __init__(self, featdim):
         super(UpdateFunction,self).__init__()
         self.t = 0
-        self.Dt = Dt
+        self.Dt = None
         self.linear = nn.Linear(featdim, featdim)
 
     def forward(self, tao, h):
