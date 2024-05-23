@@ -140,6 +140,18 @@ def PBC_MSE_loss(output, target, box_size=6):
     loss = torch.mean((error)**2)
     return loss
 
+def reconstruction_loss(predictions, targets):
+    rec_loss = []
+    for i in range(predictions.shape[0]):
+
+        diff = predictions[i] - targets[i]
+        frobenius_norm = np.linalg.norm(diff, ord='fro')
+        rec_loss.append(frobenius_norm**2)
+    
+    rec_loss = np.array(rec_loss)
+    loss = np.sum(rec_loss)
+    return loss
+
 def pbc_rms_error(predictions, targets, box_size=6):
     loss = np.sqrt(np.mean(pbc_diff(predictions, targets, box_size=box_size)**2))
     return loss

@@ -672,10 +672,21 @@ class TrajectoryDataset_New(Dataset):
         self.target_step = target_step
         
         # Create a numpy array to store all trajectories (only if graphs are preloaded or if we have less than 10k particles and trajecotries fit into RAM)
-        if self.pre_load_graphs or self.n_particles < 10000 or self.split == 'test':
-            self.trajectories = torch.zeros((self.trajectory_count, self.trajectory_len, self.n_particles, self.n_features)) # each particle state is [m, x, y, v_x, v_y]
-        else:
-            self.trajectories = None
+        # if self.pre_load_graphs or self.n_particles < 10000 or self.split == 'test':
+        # else:
+        self.trajectories = torch.zeros((self.trajectory_count, self.trajectory_len, self.n_particles, self.n_features))
+        #self.data = torch.zeros((self.trajectory_count * self.trajectory_len - self.trajectory_count, 2, self.n_particles, self.n_features)) # each particle state is [m, x, y, v_x, v_y]
+        for i in range(self.trajectory_count):
+            self.trajectories[i] = torch.from_numpy(np.load(os.path.join(self.split_folder, f"simulated_trajectory_{i}.npy")).astype(np.float32))
+        
+        # k=0
+        # for i in range(self.trajectory_count):
+        #     for j in range(self.trajectory_len-1):
+        #         self.data[k] = torch.from_numpy(np.array(([self.trajectories[i][j],self.trajectories[i][j+1]])))
+
+        
+        #self.data = self.trajectories.view(self.trajectory_count * self.trajectory_len, self.n_particles, self.n_features)
+        
 
         # Store graphs associated with each trajectory if specified (each timestep in trajectory is expected to have a graph associated in this case)
         #self.graph_type = str(graph_type)
@@ -686,159 +697,18 @@ class TrajectoryDataset_New(Dataset):
         self.rollout = rollout
 
         # Count total number of training samples available
-        if self.rollout:
-            self.no_of_samples = self.trajectory_count
-        else:
-            self.no_of_samples = (self.trajectory_len - self.target_step) * self.trajectory_count
+        
+        self.no_of_samples = self.trajectory_count #*self.trajectory_len
+       
 
-        # if self.pre_load_graphs:
-        #     if '_nn' in self.graph_type:
-        #         self.n_neighbours = int(self.graph_type.split('_')[0])
-        #         self.n_edges = self.n_particles * self.n_neighbours
-        #         # Create a numpy array to store all the graphs for all of the trajecotries (edge list of (sender, reciever) for each state/timestep in the trajectory)
-        #         self.graphs = np.zeros((self.trajectory_count, self.trajectory_len, self.n_edges, 2), dtype=np.uint16)
-        #     elif '_level_hierarchical' in self.graph_type:
-        #         self.levels = int(self.graph_type.split('_')[0])
-        #         # Store graphs for each trajecotry in a python list, because number of edges can differ
-        #         self.graphs = []
-        #         # Store assignemts of vertices to cells in a list (pairs of super vertex - cell id and vertex id)
-        #         self.assignments = []
-        #         # Crete a list to store all the super vertex features  (total mass, center of mass position, center of mass velocity) - 5 params
-        #         self.super_vertices = []
-        #         # Create a list to store ids of super vertices in a full grid
-        #         # self.super_vertex_ids = []
-        #         # Create a list array to store all the super graphs for all of the trajecotries (edge list of (sender, reciever) for each state/timestep in the trajectory)
-        #         self.super_graphs = []
-        #     else:
-        #         self.graph_type = ""
-
-        #     # Populate the numpy array(s)
-        #     for i in range(self.trajectory_count):
-
-        #         trajectory_path = os.path.join(folder_path, split, f"simulated_trajectory_{i}.npy")
-        #         trajectory = np.load(trajectory_path)
-        #         self.trajectories[i] = torch.tensor(trajectory.astype(np.float32))
-
-        #         if '_nn' in self.graph_type:
-        #             graph_path = os.path.join(self.graph_folder, f"trajectory_{i}_graphs.npy")
-        #             graph = np.load(graph_path)
-        #             self.graphs[i] = graph
-        #         elif '_level_hierarchical' in self.graph_type:
-        #             graph_path=os.path.join(self.graph_folder, f"trajectory_{i}_graphs.pkl")
-        #             graph = pickle.load(open(graph_path, "rb"))
-        #             self.graphs.append(graph)
-        #             assignment_path = os.path.join(self.graph_folder, f"trajectory_{i}_assignments.pkl")
-        #             assignment = pickle.load(open(assignment_path, "rb"))
-        #             self.assignments.append(assignment)
-        #             super_vertex_path = os.path.join(self.graph_folder, f"trajectory_{i}_super_vertices.pkl")
-        #             super_vertex_features = pickle.load(open(super_vertex_path, "rb"))
-        #             self.super_vertices.append(super_vertex_features)
-        #             super_graph_path = os.path.join(self.graph_folder, f"trajectory_{i}_super_graphs.pkl")
-        #             super_graph = pickle.load(open(super_graph_path, "rb"))
-        #             self.super_graphs.append(super_graph)
-        # else:
-        #     if '_nn' in self.graph_type:
-        #         self.n_neighbours = int(self.graph_type.split('_')[0])
-        #         self.n_edges = self.n_particles * self.n_neighbours
-        #     elif '_level_hierarchical' in self.graph_type:
-        #         self.levels = int(self.graph_type.split('_')[0])
-        #     else:
-        #         self.graph_type = ""
-
-            # Pre-parse graphs into tensors for each time step in trajectory if not done already (not needed for for test/rollout)
-            # self.graph_tensor_folder = os.path.join(self.graph_folder, 'tensors')
-            # if not os.path.isdir(self.graph_tensor_folder) and not self.rollout:
-            #     create_folder(self.graph_tensor_folder)
-            #     for i in range(self.trajectory_count):
-            #         if '_nn' in self.graph_type:
-            #             graph_path = os.path.join(self.graph_folder, f"trajectory_{i}_graphs.npy")
-            #             graph = np.load(graph_path)
-            #             for t, tensor in enumerate(graph):
-            #                 tensor_path = os.path.join(self.graph_tensor_folder, f"trajectory_{i}_graph_{t}.tpkl")
-            #                 torch.save(torch.from_numpy(tensor.astype(np.int64)), tensor_path)
-            #         elif '_level_hierarchical' in self.graph_type:
-            #             graph_path=os.path.join(self.graph_folder, f"trajectory_{i}_graphs.pkl")
-            #             graph = pickle.load(open(graph_path, "rb"))
-            #             graph = [torch.from_numpy(tensor.astype(np.int64)) for tensor in graph]
-            #             assignment_path = os.path.join(self.graph_folder, f"trajectory_{i}_assignments.pkl")
-            #             assignment = pickle.load(open(assignment_path, "rb"))
-            #             assignment = [[torch.from_numpy(tensor.astype(np.int64)) for tensor in arr] for arr in assignment]
-            #             super_vertex_path = os.path.join(self.graph_folder, f"trajectory_{i}_super_vertices.pkl")
-            #             super_vertex_features = pickle.load(open(super_vertex_path, "rb"))
-            #             super_vertex_features = [[torch.from_numpy(tensor.astype(np.float32)) for tensor in arr] for arr in super_vertex_features]
-            #             super_graph_path = os.path.join(self.graph_folder, f"trajectory_{i}_super_graphs.pkl")
-            #             super_graph = pickle.load(open(super_graph_path, "rb"))
-            #             super_graph = [[torch.from_numpy(tensor.astype(np.int64)) for tensor in arr] for arr in super_graph]
-            #             for t, timestep_vals in enumerate(zip(graph, assignment, super_vertex_features, super_graph)):
-            #                 tensor_path = os.path.join(self.graph_tensor_folder, f"trajectory_{i}_timestep_{t}.tpkl")
-            #                 torch.save(timestep_vals, tensor_path)
-
-            # # Populate only the trajectory tensor if it exists/fits into memory
-            # if self.trajectories is not None:
-            #     for i in range(self.trajectory_count):
-            #         trajectory_path = os.path.join(self.split_folder, f"simulated_trajectory_{i}.npy")
-            #         trajectory = np.load(trajectory_path)
-            #         self.trajectories[i] = torch.from_numpy(trajectory.astype(np.float32))
-            # else:
-            #     # Pre-parse trajectories into tensors for each time step in trajectory if not done already (not needed for for test/rollout)
-            #     self.trajectory_tensor_folder = os.path.join(self.split_folder, 'tensors')
-            #     if not os.path.isdir(self.trajectory_tensor_folder) and not self.rollout:
-            #         create_folder(self.trajectory_tensor_folder)
-            #         for i in range(self.trajectory_count):
-            #             trajectory_path = os.path.join(self.split_folder, f"simulated_trajectory_{i}.npy")
-            #             trajectory = np.load(trajectory_path)
-            #             for t, tensor in enumerate(trajectory):
-            #                 tensor_path = os.path.join(self.trajectory_tensor_folder, f"simulated_trajectory_{i}_{t}.tpkl")
-            #                 torch.save(torch.from_numpy(tensor.astype(np.float32)), tensor_path)
 
     def __len__(self):
         return self.no_of_samples
 
     def __getitem__(self, idx):
-        if self.rollout:
-            # Dynamically load the trajectories if they are not in memory
-            if self.trajectories is not None:
-                trajectory = self.trajectories[idx,::self.target_step]
-            else:
-                trajectory = torch.from_numpy(np.load(os.path.join(self.split_folder, f"simulated_trajectory_{idx}.npy")).astype(np.float32))[::self.target_step]
-            # if '_nn' in self.graph_type:
-            #     # Only get graph for the first time step
-            #     if self.pre_load_graphs:
-            #         graph = self.graphs[idx, 0]
-            #     else:
-            #         graph = np.load(os.path.join(self.graph_folder, f"trajectory_{idx}_graphs.npy"), mmap_mode='r')[0]
-                # Return: inputs, targets, R_s, R_r
-            return trajectory[:-1], trajectory[1:] #torch.from_numpy(graph[:,0].astype(np.int64)), torch.from_numpy(graph[:,1].astype(np.int64))
-        # else:
-        #     # Get trajectory from idx
-        #     trajectory_idx = idx // (self.trajectory_len - self.target_step)
-        #     # Get particular time step from idx
-        #     t_idx = idx % (self.trajectory_len - self.target_step)
-        #     if self.trajectories is not None:
-        #         trajectory = self.trajectories[trajectory_idx]
-        #         trajectory_input, trajectory_target = trajectory[t_idx], trajectory[t_idx + self.target_step]
-        #     else:
-        #         trajectory_input = torch.load(os.path.join(self.trajectory_tensor_folder, f"simulated_trajectory_{trajectory_idx}_{t_idx}.tpkl"))
-        #         trajectory_target = torch.load(os.path.join(self.trajectory_tensor_folder, f"simulated_trajectory_{trajectory_idx}_{t_idx + self.target_step}.tpkl"))
-        #     if '_nn' in self.graph_type:
-        #         if self.pre_load_graphs:
-        #             graph = torch.from_numpy(self.graphs[trajectory_idx, t_idx].astype(np.int64))
-        #         else:
-        #             graph = torch.load(os.path.join(self.graph_tensor_folder, f"trajectory_{trajectory_idx}_graph_{t_idx}.tpkl"))
-        #         # Return: inputs, targets, R_s, R_r
-        #         return trajectory_input, trajectory_target, graph[:,0], graph[:,1]  # inputs, targets, R_s, R_r
-        #     elif '_level_hierarchical' in self.graph_type:
-        #         if self.pre_load_graphs:
-        #             graph = torch.from_numpy(self.graphs[trajectory_idx][t_idx].astype(np.int64))
-        #             assignment = self.assignments[trajectory_idx][t_idx]
-        #             super_vertex_features = self.super_vertices[trajectory_idx][t_idx]
-        #             # super_vertex_ids = self.super_vertex_ids[trajectory_idx][t_idx]
-        #             super_graph = self.super_graphs[trajectory_idx][t_idx]
-        #         else:
-        #             graph, assignment, super_vertex_features, super_graph = torch.load(os.path.join(self.graph_tensor_folder, f"trajectory_{trajectory_idx}_timestep_{t_idx}.tpkl"))
-                
-        #         # Return: inputs, targets, R_s, R_r, assignment, V_super, super_graph
-        #         return trajectory_input, trajectory_target, graph[:,0], graph[:,1], assignment, super_vertex_features, super_graph
-        #     else:
-        #         # Return: inputs, targets  
-        #         return trajectory_input, trajectory_target
+        
+        inputs = self.trajectories[idx, :-1]
+        targets = self.trajectories[idx, 1:]
+            
+        return inputs, targets #torch.from_numpy(graph[:,0].astype(np.int64)), torch.from_numpy(graph[:,1].astype(np.int64))
+        

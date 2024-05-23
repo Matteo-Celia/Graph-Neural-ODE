@@ -12,7 +12,7 @@ import string
 
 from data import TrajectoryDataset, TrajectoryDataset_New
 from model import  GNSTODE
-from utils import PBC_MSE_loss,full_graph_senders_and_recievers, create_folder, collate_into_one_graph, data_dicts_to_graphs_tuple, pbc_diff, build_GraphTuple
+from utils import reconstruction_loss,PBC_MSE_loss,full_graph_senders_and_recievers, create_folder, collate_into_one_graph, data_dicts_to_graphs_tuple, pbc_diff, build_GraphTuple
 from eval import evaluate_model
 
 def training_step_static_graph(model, data, R_s, R_r, dt, device, accumulate_steps, box_size):
@@ -97,7 +97,7 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
     end_time = time.perf_counter_ns()
 
     # Backward
-    loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size)
+    loss = reconstruction_loss(outputs, targets) #PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size)
     loss = loss / accumulate_steps
     loss.backward()
 
@@ -139,13 +139,13 @@ def validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_
     outputs = model(inputs, dt=dt)
 
     # Get loss
-    test_loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
+    test_loss = reconstruction_loss(outputs, targets)#PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
 
     return test_loss.item()
 
-def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_rate=1e-3, lr_decay=0.97725, batch_size=100, epochs=200, accumulate_steps=1, model_dir="models", data_dir="data",
+def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_rate=1e-3, lr_decay=0.97725, batch_size=1, epochs=200, accumulate_steps=1, model_dir="models", data_dir="data",
                 hidden_units=-1, validate=True, validate_epochs=1, graph_type='_nn', integrator='rk4',
-                pre_load_graphs=True, data_loader_workers=2, smooth_lr_decay=False, target_step=1, cpu=False, experiment_dir="", log_dir="runs", resume_checkpoint="", save_after_time=0):
+                pre_load_graphs=False, data_loader_workers=2, smooth_lr_decay=False, target_step=1, cpu=False, experiment_dir="", log_dir="runs", resume_checkpoint="", save_after_time=0):
     # Track time for saving after x seconds
     start_time_for_save = time.monotonic()
 
@@ -154,11 +154,11 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
 
     # Load training dataset
     train_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='train', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=data_loader_workers, collate_fn=collate_into_one_graph, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=False, num_workers=data_loader_workers, pin_memory=True) #collate_fn=collate_into_one_graph,
 
     # Load validation dataset
     validation_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='validation', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
-    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=batch_size, shuffle=False, num_workers=data_loader_workers, collate_fn=collate_into_one_graph, pin_memory=True)
+    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=batch_size, shuffle=False, num_workers=data_loader_workers,  pin_memory=True) #collate_fn=collate_into_one_graph,
 
     # Get parameters form dataset
     box_size = train_set.box_size
@@ -322,7 +322,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_dir', action='store', default="data",
                         dest='data_dir',
                         help='Set data directory')
-    parser.add_argument('--model', action='store', default="DeltaGN",
+    parser.add_argument('--model', action='store', default="GNSTODE",
                         dest='model',
                         help='Set model type to train')
     parser.add_argument('--lr', action='store', type=float, default=0.0003,
@@ -331,7 +331,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr_decay', action='store', type=float, default=0.1, # use 0.97725 instead if decaying every epoch (smooth_lr_decay flag)
                         dest='lr_decay',
                         help='Set learning rate decay')
-    parser.add_argument('--batch_size', action='store', type=int, default=100,
+    parser.add_argument('--batch_size', action='store', type=int, default=1, #50
                         dest='batch_size',
                         help='Set batch size')
     parser.add_argument('--epochs', action='store', type=int, default=200,
@@ -352,7 +352,7 @@ if __name__ == "__main__":
     parser.add_argument('--validate_every', action="store", type=int, default=1,
                         dest='validate_every',
                         help='Validate model every n epochs')
-    parser.add_argument('--graph_type', action='store', default="fully_connected",
+    parser.add_argument('--graph_type', action='store', default="_nn",
                         dest='graph_type',
                         help='Set type of the graaph to use')
     parser.add_argument('--integrator', action='store', default="rk4",

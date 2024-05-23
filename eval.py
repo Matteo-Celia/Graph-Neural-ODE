@@ -149,7 +149,7 @@ def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph
                 output_trajectory[j+1, :, :] = current_state.cpu().detach().numpy() # [timesteps, particles, state]; state = [m,x,y,v_x,v_y]
 
             
-            print("RMSE for trajectory %i: %f" % (i , pbc_rms_error(output_trajectory[1:,:,1:], targets.cpu().numpy()[:,:,1:], box_size=box_size)))
+            print("RMSE for trajectory %i: %f" % (i , pbc_rms_error(output_trajectory[1:,:,:], targets.cpu().numpy(), box_size=box_size))) #[:,:,1:]
         
             # Save the predicted trajectory
             output_filename = os.path.join(output_folder_path,"predicted_trajectory_{i}.npy".format(i=i))
@@ -161,7 +161,7 @@ def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph
 
     # RMS over all trajectories
     predicted_trajectories = np.stack(predicted_trajectories, axis=0) # [trajectories, timesteps, particles, state]; state = [m,x,y,v_x,v_y]
-    print("RMSE over all trajectories: %f" % (pbc_rms_error(predicted_trajectories[:,1:,:,1:], test_set.trajectories[start_id:end_id,target_step::target_step,:,1:].numpy(), box_size=box_size)))
+    print("RMSE over all trajectories: %f" % (pbc_rms_error(predicted_trajectories, test_set.trajectories[start_id:end_id,target_step::target_step,:,:].numpy(), box_size=box_size))) #[:,1:,:,1:]
     print("Mean relative energy error over all trajectories: %f" % (pbc_mean_relative_energy_error(predicted_trajectories, box_size=box_size, physical_const=physical_const, softening=softening, softening_radius=softening_radius)))
 
     print('Finished evaluation')
