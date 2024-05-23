@@ -59,6 +59,8 @@ def create_folder(folder_path):
         print("Directory %s exists" % folder_path)
     else:
         print("Successfully created the directory %s" % folder_path)
+
+
 def _check_valid_sets_of_keys(dicts):
   """Checks that all dictionaries have exactly the same valid key sets."""
   prev_keys = None
@@ -176,7 +178,7 @@ def _concatenate_data_dicts(data_dicts):
 
   return concatenated_dicts
 
-def data_dicts_to_graphs_tuple(graph_dicts:dict):
+def data_dicts_to_graphs_tuple(data_dicts):
     # for k,v in graph_dicts.items():
     #     graph_dicts[k]=torch.tensor(v)
     # return GraphsTuple(**graph_dicts)
