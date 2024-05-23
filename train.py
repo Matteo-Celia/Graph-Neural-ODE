@@ -168,7 +168,7 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
     traj_len = train_set.trajectory_len
 
     
-    model = GNSTODE(n_particles, traj_len, box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, integrator=integrator, simulation_type=simulation_type)
+    model = GNSTODE(n_particles, box_size=box_size, integrator=integrator, simulation_type=simulation_type)
 
 
     device = torch.device("cuda" if ((not cpu) and torch.cuda.is_available()) else "cpu")#cuda:0
