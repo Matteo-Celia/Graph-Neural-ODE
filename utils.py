@@ -9,7 +9,34 @@ from itertools import accumulate, chain
 from scipy.spatial.distance import cdist
 from collections import abc
 from random import randint
-from graphs import GraphsTuple
+import graphs
+import collections
+
+NODES = graphs.NODES
+EDGES = graphs.EDGES
+GLOBALS = graphs.GLOBALS
+RECEIVERS = graphs.RECEIVERS
+SENDERS = graphs.SENDERS
+GLOBALS = graphs.GLOBALS
+N_NODE = graphs.N_NODE
+N_EDGE = graphs.N_EDGE
+
+GRAPH_DATA_FIELDS = graphs.GRAPH_DATA_FIELDS
+GRAPH_NUMBER_FIELDS = graphs.GRAPH_NUMBER_FIELDS
+ALL_FIELDS = graphs.ALL_FIELDS
+
+GRAPH_NX_FEATURES_KEY = "features"
+
+
+def _check_valid_keys(keys):
+  if any([x in keys for x in [EDGES, RECEIVERS, SENDERS]]):
+    if not (RECEIVERS in keys and SENDERS in keys):
+      raise ValueError("If edges are present, senders and receivers should "
+                       "both be defined.")
+
+
+def _defined_keys(dict_):
+  return {k for k, v in dict_.items() if v is not None}
 
 def recreate_folder(folder_path):
     try:
@@ -32,12 +59,134 @@ def create_folder(folder_path):
         print("Directory %s exists" % folder_path)
     else:
         print("Successfully created the directory %s" % folder_path)
+def _check_valid_sets_of_keys(dicts):
+  """Checks that all dictionaries have exactly the same valid key sets."""
+  prev_keys = None
+  for dict_ in dicts:
+    current_keys = _defined_keys(dict_)
+    _check_valid_keys(current_keys)
+    if prev_keys and current_keys != prev_keys:
+      raise ValueError(
+          "Different set of keys found when iterating over data dictionaries "
+          "({} vs {})".format(prev_keys, current_keys))
+    prev_keys = current_keys
 
+def _to_compatible_data_dicts(data_dicts):
+  """Converts the content of `data_dicts` to arrays of the right type.
+
+  All fields are converted to numpy arrays. The index fields (`SENDERS` and
+  `RECEIVERS`) and number fields (`N_NODE`, `N_EDGE`) are cast to `np.int32`.
+
+  Args:
+    data_dicts: An iterable of dictionaries with keys `ALL_KEYS` and values
+      either `None`s, or quantities that can be converted to numpy arrays.
+
+  Returns:
+    A list of dictionaries containing numpy arrays or `None`s.
+  """
+  results = []
+  for data_dict in data_dicts:
+    result = {}
+    for k, v in data_dict.items():
+      if v is None:
+        result[k] = None
+      else:
+        dtype = np.int32 if k in [SENDERS, RECEIVERS, N_NODE, N_EDGE] else None
+        result[k] = np.asarray(v, dtype)
+    results.append(result)
+  return results
+
+def _compute_stacked_offsets(sizes, repeats):
+  """Computes offsets to add to indices of stacked np arrays.
+
+  When a set of np arrays are stacked, the indices of those from the second on
+  must be offset in order to be able to index into the stacked np array. This
+  computes those offsets.
+
+  Args:
+    sizes: A 1D sequence of np arrays of the sizes per graph.
+    repeats: A 1D sequence of np arrays of the number of repeats per graph.
+
+  Returns:
+    The index offset per graph.
+  """
+  return np.repeat(np.cumsum(np.hstack([0, sizes[:-1]])), repeats)
+
+def _populate_number_fields(data_dict):
+  """Returns a dict with the number fields N_NODE, N_EDGE filled in.
+
+  The N_NODE field is filled if the graph contains a non-None NODES field;
+  otherwise, it is set to 0.
+  The N_EDGE field is filled if the graph contains a non-None RECEIVERS field;
+  otherwise, it is set to 0.
+
+  Args:
+    data_dict: An input `dict`.
+
+  Returns:
+    The data `dict` with number fields.
+  """
+  dct = data_dict.copy()
+  for number_field, data_field in [[N_NODE, NODES], [N_EDGE, RECEIVERS]]:
+    if dct.get(number_field) is None:
+      if dct[data_field] is not None:
+        dct[number_field] = np.array(
+            np.shape(dct[data_field])[0], dtype=np.int32)
+      else:
+        dct[number_field] = np.array(0, dtype=np.int32)
+  return dct
+
+def _concatenate_data_dicts(data_dicts):
+  """Concatenate a list of data dicts to create the equivalent batched graph.
+
+  Args:
+    data_dicts: An iterable of data dictionaries with keys `GRAPH_DATA_FIELDS`,
+      plus, potentially, a subset of `GRAPH_NUMBER_FIELDS`. Each dictionary is
+      representing a single graph.
+
+  Returns:
+    A data dictionary with the keys `GRAPH_DATA_FIELDS + GRAPH_NUMBER_FIELDS`,
+    representing the concatenated graphs.
+  """
+  # Create a single dict with fields that contain sequences of graph tensors.
+  concatenated_dicts = collections.defaultdict(lambda: [])
+  for data_dict in data_dicts:
+    data_dict = _populate_number_fields(data_dict)
+    for k, v in data_dict.items():
+      if v is not None:
+        concatenated_dicts[k].append(v)
+      else:
+        concatenated_dicts[k] = None
+
+  concatenated_dicts = dict(concatenated_dicts)
+
+  for field, arrays in concatenated_dicts.items():
+    if arrays is None:
+      concatenated_dicts[field] = None
+    elif field in list(GRAPH_NUMBER_FIELDS) + [GLOBALS]:
+      concatenated_dicts[field] = np.stack(arrays)
+    else:
+      concatenated_dicts[field] = np.concatenate(arrays, axis=0)
+
+  if concatenated_dicts[RECEIVERS] is not None:
+    offset = _compute_stacked_offsets(concatenated_dicts[N_NODE],
+                                      concatenated_dicts[N_EDGE])
+    for field in (RECEIVERS, SENDERS):
+      concatenated_dicts[field] += offset
+
+  return concatenated_dicts
 
 def data_dicts_to_graphs_tuple(graph_dicts:dict):
-    for k,v in graph_dicts.items():
-        graph_dicts[k]=torch.tensor(v)
-    return GraphsTuple(**graph_dicts)
+    # for k,v in graph_dicts.items():
+    #     graph_dicts[k]=torch.tensor(v)
+    # return GraphsTuple(**graph_dicts)
+    data_dicts = [dict(d) for d in data_dicts]
+    for key in graphs.GRAPH_DATA_FIELDS:
+        for data_dict in data_dicts:
+            data_dict.setdefault(key, None)
+    _check_valid_sets_of_keys(data_dicts)
+    data_dicts = _to_compatible_data_dicts(data_dicts)
+    return graphs.GraphsTuple(**_concatenate_data_dicts(data_dicts))
 
 def pbc_diff(pos1, pos2, box_size=6):
     diff = pos1 - pos2
