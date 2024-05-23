@@ -50,7 +50,7 @@ class UpdateFunction(nn.Module):
         return self.Dt + (self.t-tao)*self.linear(h)
          
 
-class GNSTODE(nn.module):
+class GNSTODE(nn.Module):
     #at each forward pass:
     
     
