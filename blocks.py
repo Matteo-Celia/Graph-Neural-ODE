@@ -92,7 +92,7 @@ class EdgeBlock(nn.Module):
         if self._use_globals:
             edges_to_collect.append(broadcast_globals_to_edges(graph))  # (50,)
 
-        collected_edges = torch.stack(edges_to_collect, dim=1) #torch.cat(torch.tensor(edges_to_collect), dim=1)
+        collected_edges = torch.cat(edges_to_collect, dim=-1) #torch.cat(torch.tensor(edges_to_collect), dim=1)
         updated_edges = self.linear(collected_edges)
         return graph.replace(edges=updated_edges)
 
