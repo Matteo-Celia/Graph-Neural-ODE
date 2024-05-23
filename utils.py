@@ -83,7 +83,7 @@ def build_GraphTuple(inputs, R_s, R_r):
         data_dict= {
         "globals": None,
         "nodes": inputs[i],
-        "edges": np.squeeze(np.array(edges), axis=0),  
+        "edges": np.array(edges),
         "senders": R_s[i],
         "receivers": R_r[i]
         }
