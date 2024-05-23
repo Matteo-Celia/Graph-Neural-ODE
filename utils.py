@@ -63,7 +63,7 @@ def build_GraphTuple(inputs, R_s, R_r):
     data_dict_list = []
 
     # compute edge features as distances between nodes
-    indices = np.arange(0, len(inputs.shape[1]))  
+    indices = np.arange(0, inputs.shape[1])
     
     # if simulation_type == "coulomb":
     #     feat_idx = list([0,1,4,5]) # (mass, charge, vx, vy)
