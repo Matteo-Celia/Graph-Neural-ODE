@@ -65,13 +65,13 @@ class EdgeBlock(nn.Module):
         self._use_sender_nodes = use_sender_nodes
         self._use_globals = use_globals
         N_features = 0
-        pre_features = nodedim
-        if self._use_nodes:
+        pre_features= nodedim
+        if self._use_edges:
+            N_features += edgedim
+        if self._use_receiver_nodes:
             N_features += nodedim
-        if self._use_received_edges:
-            N_features += edgedim
-        if self._use_sent_edges:
-            N_features += edgedim
+        if self._use_sender_nodes:
+            N_features += nodedim
         self.linear = nn.Linear(N_features, pre_features)
 
     def forward(self, graph: GraphsTuple):
