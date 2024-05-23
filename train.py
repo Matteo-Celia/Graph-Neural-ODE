@@ -340,7 +340,7 @@ if __name__ == "__main__":
     parser.add_argument('--accumulate_steps', action='store', type=int, default=1,
                         dest='accumulate_steps',
                         help='Set number of epochs')
-    parser.add_argument('--dataset', action='store', default="20_particles_gravity",
+    parser.add_argument('--dataset', action='store', default="3_particles_gravity",
                         dest='dataset',
                         help='Set dataset to use')
     parser.add_argument('--hidden_units', action="store", type=int, default=-1,
