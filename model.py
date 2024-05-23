@@ -25,7 +25,7 @@ class GraphInteractionNetwork(nn.Module):
         
 
     def forward(self, t, h, args):
-
+        h = h.squeeze(0)
         print(h.shape)
         #nodes = h.reshape(-1,self.nodedim)
         #recompute graph based on h
