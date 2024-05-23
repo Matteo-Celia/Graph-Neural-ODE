@@ -53,7 +53,8 @@ class Aggregator(nn.Module):
 
 class EdgeBlock(nn.Module):
     def __init__(self,
-                 graph: GraphsTuple,
+                 nodedim, 
+                 edgedim,
                  use_edges=True,
                  use_receiver_nodes=True,
                  use_sender_nodes=True,
@@ -64,15 +65,13 @@ class EdgeBlock(nn.Module):
         self._use_sender_nodes = use_sender_nodes
         self._use_globals = use_globals
         N_features = 0
-        pre_features=graph.edges.shape[-1]
-        if self._use_edges:
-            N_features += graph.edges.shape[-1]
-        if self._use_receiver_nodes:
-            N_features += graph.nodes.shape[-1]
-        if self._use_sender_nodes:
-            N_features += graph.nodes.shape[-1]
-        if self._use_globals:
-            N_features += graph.globals.shape[-1]
+        pre_features = nodedim
+        if self._use_nodes:
+            N_features += nodedim
+        if self._use_received_edges:
+            N_features += edgedim
+        if self._use_sent_edges:
+            N_features += edgedim
         self.linear = nn.Linear(N_features, pre_features)
 
     def forward(self, graph: GraphsTuple):
