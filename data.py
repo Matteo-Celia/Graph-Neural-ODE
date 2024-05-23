@@ -11,9 +11,9 @@ import pickle
 import itertools
 import random
 import string
-from scipy.stats import truncnorm
+# from scipy.stats import truncnorm
 
-from visualize import plot_trajectory, plot_energies
+# from visualize import plot_trajectory, plot_energies
 from utils import create_folder, recreate_folder, pbc_diff
 
 
