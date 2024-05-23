@@ -9,11 +9,11 @@ from graphs import GraphsTuple
 # import utils_tf
 
 def broadcast_receiver_nodes_to_edges(graph: GraphsTuple):
-    return torch.from_numpy(graph.nodes).index_select(index=graph.receivers.long(), dim=0)
+    return torch.from_numpy(graph.nodes).index_select(index=graph.receivers.astype(np.int32), dim=0)
 
 
 def broadcast_sender_nodes_to_edges(graph: GraphsTuple):
-    return torch.from_numpy(graph.nodes).index_select(index=graph.senders.long(), dim=0)
+    return torch.from_numpy(graph.nodes).index_select(index=graph.senders.astype(np.int32), dim=0)
 
 
 def broadcast_globals_to_edges(graph: GraphsTuple):
