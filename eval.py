@@ -7,7 +7,7 @@ import re
 
 from data import TrajectoryDataset, TrajectoryDataset_New
 from model import GNSTODE
-from utils import pbc_rms_error, pbc_mean_relative_energy_error, recreate_folder, create_folder, full_graph_senders_and_recievers, nn_graph_senders_and_recievers, hierarchical_graph_senders_and_recievers, collate_into_one_graph
+from utils import pbc_rms_error, pbc_mean_relative_energy_error, recreate_folder, create_folder
 
 
 def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph_type="", model_dir="models", data_dir="data", experiment_dir="", pre_load_graphs=True, start_id=0, end_id=-1):
