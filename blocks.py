@@ -142,7 +142,7 @@ class NodeBlock(nn.Module):
         if self._use_globals:
             nodes_to_collect.append(broadcast_globals_to_nodes(graph))  # (24,4)
 
-        collected_nodes = torch.cat(torch.tensor(nodes_to_collect), dim=1)  # 24,19
+        collected_nodes = torch.cat(nodes_to_collect, dim=-1)  # dim =1 or -1?  24,19
         updated_nodes = self.linear(collected_nodes)  # 24,11
 
         return graph.replace(nodes=updated_nodes)

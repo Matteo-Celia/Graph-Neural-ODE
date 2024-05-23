@@ -27,7 +27,7 @@ class GraphInteractionNetwork(nn.Module):
     def forward(self, t, h, args):
         #rebuild matrix
         h = h.squeeze(0)
-        print(h.shape)
+        #print(h.shape)
         #nodes = h.reshape(-1,self.nodedim)
         #recompute graph based on h
         R_s, R_r = build_senders_receivers(h)
@@ -93,8 +93,8 @@ class GNSTODE(nn.Module):
 
     def forward(self, input_trajectory, dt):#change just inputs,R_s and R_r graph is built inside the gin
         
-        #num_nodes = input_trajectory.shape[1]
         
+        Xt = Xt.squeeze(0)
         Xt = input_trajectory
         #spatial processing
         #Xt_resh = Xt.reshape(-1,Xt.shape[-2]*Xt.shape[-1])

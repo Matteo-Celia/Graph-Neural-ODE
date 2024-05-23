@@ -210,7 +210,7 @@ def split_matrix_np(matrix, num_chunks, chunk_size, flatten=True):
     
     return submatrices
 
-def build_GraphTuple(inputs, R_s, R_r):
+def build_GraphTuple_old(inputs, R_s, R_r):
 
     data_dict_list = []
 
@@ -234,7 +234,7 @@ def build_GraphTuple(inputs, R_s, R_r):
         data_dict= {
         "globals": None,
         "nodes": inputs[i],
-        "edges": np.array(edges),
+        "edges": np.array(edges).reshape((R_s)),
         "senders": R_s[i],
         "receivers": R_r[i]
         }
@@ -243,7 +243,31 @@ def build_GraphTuple(inputs, R_s, R_r):
     graphs = data_dicts_to_graphs_tuple(data_dict_list)
     return graphs
 
-def build_senders_receivers(trajectory, neighbour_count =2, box_size=6): #15
+def build_GraphTuple(inputs, distances, R_s, R_r):
+
+    data_dict_list = []
+
+    for i in range(inputs.shape[0]):
+        edge_feat = []
+        for j in range(R_s.shape[1]):
+            dist = distances[i,R_s[i,j],R_r[i,j]]
+            edge_feat.append(dist)
+           
+        edges = np.array(edge_feat).reshape((R_s.shape[1],1))
+        data_dict= {
+        "globals": None,
+        "nodes": inputs[i],
+        "edges": edges,
+        "senders": R_s[i],
+        "receivers": R_r[i]
+        }
+
+        data_dict_list.append(dict(data_dict))
+
+    graphs = data_dicts_to_graphs_tuple(data_dict_list)
+    return graphs
+
+def build_senders_receivers_old(trajectory, neighbour_count =2, box_size=6): #15
     
     trajectory_len = trajectory.shape[0]
     n_particles = trajectory.shape[1]
@@ -269,6 +293,41 @@ def build_senders_receivers(trajectory, neighbour_count =2, box_size=6): #15
     
     #return senders , receivers
     return graph[:,:,0], graph[:,:,1]
+
+def build_senders_receivers(inputs, neighbour_count =2, box_size=6): #15
+    
+    pairwise_distances = torch.zeros((inputs.shape[0], inputs.shape[1], inputs.shape[1]))
+    for i in range(inputs.shape[0]):
+
+        distances = cdist(inputs[i], inputs[i], 'euclidean')  # Shape (N, N)
+        pairwise_distances[i] = torch.from_numpy(distances)
+            
+    #print(pairwise_distances.shape,pairwise_distances)
+
+    T, N, _ = pairwise_distances.shape
+    k = neighbour_count  # number of nearest neighbors
+
+    # Initialize senders and receivers arrays
+    senders = torch.zeros((T,N*k))
+    receivers = torch.zeros((T,N*k))
+
+    for t in range(T):
+        l=0
+        for i in range(N):
+            
+            # Get distances from node i to all other nodes
+            dist = pairwise_distances[t, i]
+            
+            # Get the indices of the k smallest distances (excluding the node itself)
+            nearest_indices = torch.topk(dist, k + 1, largest=False).indices[1:]  # Exclude self (distance 0)
+            print(f"nearest indices for node {i} in traj {t} : {nearest_indices}")
+            # Append sender and receiver pairs
+            for j in nearest_indices:
+                senders[t,l]= i
+                receivers[t,l]=j.item()
+                l+=1
+
+    return pairwise_distances, senders.long(), receivers.long()
 
 # Ensure x and y stay inside the box and follow PBC
 def apply_PBC_to_coordinates(coordinates, box_size=6):
