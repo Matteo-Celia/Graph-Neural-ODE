@@ -77,7 +77,7 @@ def build_GraphTuple(inputs, R_s, R_r):
             distances = np.linalg.norm(pbc_diff(inputs[i, indices, -4:-2], inputs[i, j, -4:-2][np.newaxis, :], box_size=6), axis=-1)
             dist_list.append(np.array(distances))
         
-        edges = [dist_list[R_s[i].to(torch.int64)][R_r[i].to(torch.int64)] for i in range(len(R_s))]
+        edges = [dist_list[R_s[i].astype(np.int64)][R_r[i].astype(np.int64)] for i in range(len(R_s))]
         data_dict= {
         "globals": None,
         "nodes": inputs[i],
