@@ -25,6 +25,7 @@ class GraphInteractionNetwork(nn.Module):
         
 
     def forward(self, t, h, args):
+        #rebuild matrix
         h = h.squeeze(0)
         print(h.shape)
         #nodes = h.reshape(-1,self.nodedim)
@@ -96,12 +97,12 @@ class GNSTODE(nn.Module):
         
         Xt = input_trajectory
         #spatial processing
-        
+        #Xt_resh = Xt.reshape(-1,Xt.shape[-2]*Xt.shape[-1])
         HL = self.spatial_model(Xt,self.L_span)
         
         ##split matrix based on the nodes of each graph and then flatten to build a matrix: (trajectory_len,num_nodes*nodedim) 
         #HL_split = split_matrix_np(HL,len(num_nodes), self.n_particles) 
-        
+    
         Dt = self.NN(HL)
 
         Xtpreds = []
