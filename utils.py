@@ -78,12 +78,12 @@ def build_GraphTuple(inputs, R_s, R_r):
             #distances = np.linalg.norm(pbc_diff(inputs[i, indices, -4:-2], inputs[i, j, -4:-2][np.newaxis, :], box_size=6), axis=-1)
             distances = cdist(inputs[i], inputs[i], 'euclidean')  # Shape (N, N)
             dist_list.append(np.array(distances))
-        dist_list=np.array(dist_list)
+        dist_list = np.squeeze(np.array(dist_list), axis=0)
         edges = [dist_list[R_s[i].astype(np.int64)][R_r[i].astype(np.int64)] for i in range(len(R_s))]
         data_dict= {
         "globals": None,
         "nodes": inputs[i],
-        "edges": edges,  
+        "edges": np.squeeze(np.array(edges), axis=0),  
         "senders": R_s[i],
         "receivers": R_r[i]
         }
