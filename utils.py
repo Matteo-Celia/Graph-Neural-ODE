@@ -90,7 +90,7 @@ def build_GraphTuple(inputs, R_s, R_r):
     graphs = data_dicts_to_graphs_tuple(data_dict_list)
     return graphs
 
-def build_senders_receivers(trajectory, neighbour_count = 15, box_size=6):
+def build_senders_receivers(trajectory, neighbour_count =2, box_size=6): #15
     
     trajectory_len = trajectory.shape[0]
     n_particles = trajectory.shape[1]
