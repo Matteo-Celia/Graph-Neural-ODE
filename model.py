@@ -49,7 +49,7 @@ class UpdateFunction(nn.Module):
         self.Dt = None
         self.linear = nn.Linear(featdim, featdim)
 
-    def forward(self, tao, h, **kwargs): #, args
+    def forward(self, tao, h ): #**kwargs
 
         return self.Dt + (self.t-tao)*self.linear(h)
          
@@ -109,13 +109,12 @@ class GNSTODE(nn.Module):
     
         Dt = self.NN(HL[-1]) #get just the final solution
 
-
+        print(Dt.shape)
         #temporal processing
         self.F.Dt = Dt
         
         Xtpreds = self.temporal_model(Xt,self.t_span)
         #get just the final solution and reshape it as (T,N,D) again
-        #Xtpreds.append(Xtpred[-1].reshape(-1,input_trajectory.shape[-2],Xt.shape[-1])) 
         Xtpreds = Xtpreds[-1].reshape(-1,input_trajectory.shape[-2],input_trajectory.shape[-1])
         print(Xtpreds.shape)
 
