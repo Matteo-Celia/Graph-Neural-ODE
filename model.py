@@ -49,7 +49,7 @@ class UpdateFunction(nn.Module):
         self.Dt = None
         self.linear = nn.Linear(featdim, featdim)
 
-    def forward(self, t, x ): #**kwargs
+    def forward(self, t, x, **kwargs ): #**kwargs
 
         return self.Dt + (self.t-t)*self.linear(x)
          
