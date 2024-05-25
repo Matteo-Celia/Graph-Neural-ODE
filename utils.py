@@ -329,6 +329,18 @@ def build_senders_receivers(inputs, neighbour_count =2, box_size=6): #15
 
     return pairwise_distances, senders.long(), receivers.long()
 
+def reconstruction_loss(predictions, targets):
+    rec_loss = []
+    for i in range(predictions.shape[0]):
+
+        diff = predictions[i] - targets[i]
+        frobenius_norm = np.linalg.norm(diff.detach().numpy(), ord='fro') #.detach().numpy()
+        rec_loss.append(frobenius_norm**2)
+    
+    rec_loss = np.array(rec_loss)
+    loss = np.sum(rec_loss)
+    return loss
+
 # Ensure x and y stay inside the box and follow PBC
 def apply_PBC_to_coordinates(coordinates, box_size=6):
     # Only apply to coordinate columns
@@ -352,17 +364,6 @@ def PBC_MSE_loss(output, target, box_size=6):
     loss = torch.mean((error)**2)
     return loss
 
-def reconstruction_loss(predictions, targets):
-    rec_loss = []
-    for i in range(predictions.shape[0]):
-
-        diff = predictions[i] - targets[i]
-        frobenius_norm = np.linalg.norm(diff, ord='fro')
-        rec_loss.append(frobenius_norm**2)
-    
-    rec_loss = np.array(rec_loss)
-    loss = np.sum(rec_loss)
-    return loss
 
 def pbc_rms_error(predictions, targets, box_size=6):
     loss = np.sqrt(np.mean(pbc_diff(predictions, targets, box_size=box_size)**2))
