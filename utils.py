@@ -335,11 +335,11 @@ def reconstruction_loss(predictions, targets):
     for i in range(predictions.shape[0]):
 
         diff = predictions[i] - targets[i]
-        frobenius_norm = np.linalg.norm(diff.detach().numpy(), ord='fro') #.detach().numpy()
+        frobenius_norm = torch.norm(diff, p='fro') #.detach().numpy()
         rec_loss.append(frobenius_norm**2)
     
-    rec_loss = np.array(rec_loss)
-    loss = np.sum(rec_loss)
+    rec_loss = torch.tensor(rec_loss)
+    loss = torch.sum(rec_loss)
     return loss
 
 # Ensure x and y stay inside the box and follow PBC
