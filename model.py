@@ -29,7 +29,7 @@ class GraphInteractionNetwork(nn.Module):
         #h = h.squeeze(0) # shape (T,N*D)
         
         nodes = h.reshape(-1,self.n_particles,self.nodedim) # shape (T,N,D)
-        print(nodes.shape)
+        #print(nodes.shape)
         #recompute graph based on h
         distances, R_s, R_r = build_senders_receivers(nodes)
         self.graph = build_GraphTuple(nodes, distances, R_s, R_r)
