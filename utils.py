@@ -140,10 +140,10 @@ def _populate_number_fields(data_dict):
   for number_field, data_field in [[N_NODE, NODES], [N_EDGE, RECEIVERS]]:
     if dct.get(number_field) is None:
       if dct[data_field] is not None:
-        dct[number_field] = np.array(
-            np.shape(dct[data_field])[0], dtype=np.int32)
+        dct[number_field] = torch.tensor(
+            torch.shape(dct[data_field])[0], dtype=torch.int32)
       else:
-        dct[number_field] = np.array(0, dtype=np.int32)
+        dct[number_field] = torch.tensor(0, dtype=torch.int32)
   return dct
 
 def _concatenate_data_dicts(data_dicts):
