@@ -24,18 +24,20 @@ class GraphInteractionNetwork(nn.Module):
         self._node_block = blocks.NodeBlock(nodedim, edgedim, use_sent_edges=False, use_globals=False)
         
 
-    def forward(self, t, h, args):
+    def forward(self, t, h): #, args
         #rebuild matrix
-        h = h.squeeze(0)
+        h = h.squeeze(0) # shape (T,N*D)
         #print(h.shape)
-        #nodes = h.reshape(-1,self.nodedim)
+        nodes = h.reshape(-1,self.n_particles,self.nodedim) # shape (T,N,D)
         #recompute graph based on h
-        R_s, R_r = build_senders_receivers(h)
+        R_s, R_r = build_senders_receivers(nodes)
         self.graph = build_GraphTuple(h, R_s, R_r)
         
-        new_nodes = self._node_block(self._edge_block(self.graph)).nodes
-        #batch nodes' features as (trajectory_len,num_nodes,nodedim)
-        return split_matrix_np(new_nodes,len(self.graph.n_node), self.n_particles) 
+        new_nodes = self._node_block(self._edge_block(self.graph)).nodes # shape (N_nodes*traj_len,N_features)
+        #batch nodes' features as (trajectory_len,num_nodes*nodedim)
+        new_h = new_nodes.reshape(-1, self.n_particles*self.nodedim) # shape (T,N*D)
+
+        return new_h
 
 
 
@@ -46,7 +48,7 @@ class UpdateFunction(nn.Module):
         self.Dt = None
         self.linear = nn.Linear(featdim, featdim)
 
-    def forward(self, tao, h, args):
+    def forward(self, tao, h): #, args
 
         return self.Dt + (self.t-tao)*self.linear(h)
          
@@ -73,7 +75,7 @@ class GNSTODE(nn.Module):
         self.L_span = torch.linspace(0, 1, space_int)
         self.t_span = torch.linspace(0, 1, temp_int)
         
-        self.featdim = nodedim*n_particles
+        self.featdim = n_particles*nodedim
         # Linear layer to obtain Dt from H_L
         #self.linear = nn.Linear(self.featdim, self.featdim)
         
@@ -91,14 +93,15 @@ class GNSTODE(nn.Module):
         
         
 
-    def forward(self, input_trajectory, dt):#change just inputs,R_s and R_r graph is built inside the gin
+    def forward(self, input_trajectory, dt):
         
-        
-        Xt = Xt.squeeze(0)
         Xt = input_trajectory
+        Xt = Xt.squeeze(0)
+        
         #spatial processing
-        #Xt_resh = Xt.reshape(-1,Xt.shape[-2]*Xt.shape[-1])
-        HL = self.spatial_model(Xt,self.L_span)
+        #reshape Xt as (traj_len,N_nodes*N_features)
+        Xt_resh = Xt.reshape(-1,Xt.shape[-2]*Xt.shape[-1])
+        HL = self.spatial_model(Xt_resh,self.L_span)
         
         ##split matrix based on the nodes of each graph and then flatten to build a matrix: (trajectory_len,num_nodes*nodedim) 
         #HL_split = split_matrix_np(HL,len(num_nodes), self.n_particles) 
@@ -111,7 +114,7 @@ class GNSTODE(nn.Module):
         self.F.Dt = Dt
         
         Xtpred = self.temporal_model(Xt,self.t_span)
-        Xtpreds.append(Xtpred)
+        Xtpreds.append(Xtpred[-1]) #get just the final solution
 
         # for i,t in enumerate(self.traj_len):
             

@@ -197,7 +197,7 @@ def pbc_diff(pos1, pos2, box_size=6):
     diff[diff <= -box_size/2] = diff[diff <= -box_size/2] + box_size
     return diff
 
-def split_matrix_np(matrix, num_chunks, chunk_size, flatten=True):
+def split_matrix_np(matrix, num_chunks, chunk_size, flatten=False):
     # Ensure the input is a NumPy array
     matrix = np.array(matrix)
     

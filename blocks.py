@@ -35,16 +35,16 @@ class Aggregator(nn.Module):
         edges = graph.edges
         nodes = graph.nodes
         if self.mode == 'receivers':
-            indeces = graph.receivers
+            indices = graph.receivers
         elif self.mode == 'senders':
-            indeces = graph.senders
+            indices = graph.senders
         else:
             raise AttributeError("invalid parameter `mode`")
         N_edges, N_features = edges.shape
         N_nodes = nodes.shape[0]
         aggrated_list = []
         for i in range(N_nodes):
-            aggrated = edges[indeces == i]
+            aggrated = edges[indices == i] #all edges features that have node i as sender/receiver
             if aggrated.shape[0] == 0:
                 aggrated = torch.zeros(1, N_features)
             aggrated_list.append(torch.sum(aggrated, dim=0))
@@ -72,7 +72,7 @@ class EdgeBlock(nn.Module):
             N_features += nodedim
         if self._use_sender_nodes:
             N_features += nodedim
-        self.linear = nn.Linear(N_features, pre_features)
+        self.edgefn = nn.Linear(N_features, pre_features)
 
     def forward(self, graph: GraphsTuple):
         edges_to_collect = []
@@ -93,7 +93,7 @@ class EdgeBlock(nn.Module):
             edges_to_collect.append(broadcast_globals_to_edges(graph))  # (50,)
 
         collected_edges = torch.cat(edges_to_collect, dim=-1) #torch.cat(torch.tensor(edges_to_collect), dim=1)
-        updated_edges = self.linear(collected_edges)
+        updated_edges = self.edgefn(collected_edges)
         return graph.replace(edges=updated_edges)
 
 
