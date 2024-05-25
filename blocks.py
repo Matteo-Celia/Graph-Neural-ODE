@@ -10,13 +10,13 @@ from graphs import GraphsTuple
 
 def broadcast_receiver_nodes_to_edges(graph: GraphsTuple):
     for node in graph.nodes:
-        if node.device!="cuda:0" and torch.cuda.is_available():
-            node.to("cuda:0")
+        
+        print(node.device)
 
-    for i in graph.receivers:
-        if i.device!="cuda:0" and torch.cuda.is_available():
-            i.to("cuda:0")
-    return graph.nodes.index_select(index=graph.receivers, dim=0)
+    # for i in graph.receivers:
+    #     if i.device!="cuda:0" and torch.cuda.is_available():
+    #         i.to("cuda:0")
+    return graph.nodes.index_select(index=graph.receivers.long(), dim=0)
 
 
 def broadcast_sender_nodes_to_edges(graph: GraphsTuple):

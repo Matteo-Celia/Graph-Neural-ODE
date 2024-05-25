@@ -254,7 +254,9 @@ def build_GraphTuple_old(inputs, R_s, R_r):
 def build_GraphTuple(inputs, distances, R_s, R_r):
 
     data_dict_list = []
-
+    if torch.cuda.is_available():
+        device = "cuda:0" 
+            
     for i in range(inputs.shape[0]):
         edge_feat = []
         for j in range(R_s.shape[1]):
@@ -264,10 +266,10 @@ def build_GraphTuple(inputs, distances, R_s, R_r):
         edges = torch.tensor(edge_feat).reshape((R_s.shape[1],1))
         data_dict= {
         "globals": None,
-        "nodes": inputs[i],
-        "edges": edges,
-        "senders": R_s[i],
-        "receivers": R_r[i]
+        "nodes": inputs[i].to(device),
+        "edges": edges.to(device),
+        "senders": R_s[i].to(device),
+        "receivers": R_r[i].to(device)
         }
 
         data_dict_list.append(dict(data_dict))
