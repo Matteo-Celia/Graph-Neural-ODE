@@ -99,28 +99,29 @@ def _to_compatible_data_dicts(data_dicts):
   return results
 
 def _compute_stacked_offsets(sizes, repeats):
-  """Computes offsets to add to indices of stacked np arrays.
+    """Computes offsets to add to indices of stacked np arrays.
 
-  When a set of np arrays are stacked, the indices of those from the second on
-  must be offset in order to be able to index into the stacked np array. This
-  computes those offsets.
+    When a set of np arrays are stacked, the indices of those from the second on
+    must be offset in order to be able to index into the stacked np array. This
+    computes those offsets.
 
-  Args:
-    sizes: A 1D sequence of np arrays of the sizes per graph.
-    repeats: A 1D sequence of np arrays of the number of repeats per graph.
+    Args:
+      sizes: A 1D sequence of np arrays of the sizes per graph.
+      repeats: A 1D sequence of np arrays of the number of repeats per graph.
 
-  Returns:
-    The index offset per graph.
-  """
-    # Compute the cumulative sum of the sizes after including a 0 at the beginning
-  sizes_with_zero = torch.cat([torch.tensor([0]), sizes[:-1]])
+    Returns:
+      The index offset per graph.
+    """
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+      # Compute the cumulative sum of the sizes after including a 0 at the beginning
+    sizes_with_zero = torch.cat([torch.tensor([0]), sizes[:-1]])
 
-  # Compute the cumulative sum
-  cumsum_sizes = torch.cumsum(sizes_with_zero, dim=0)
+    # Compute the cumulative sum
+    cumsum_sizes = torch.cumsum(sizes_with_zero, dim=0)
 
-  # Repeat each element in cumsum_sizes 'repeats' times
-  result = cumsum_sizes.repeat_interleave(repeats)
-  return result #np.repeat(np.cumsum(np.hstack([0, sizes[:-1]])), repeats)
+    # Repeat each element in cumsum_sizes 'repeats' times
+    result = cumsum_sizes.repeat_interleave(repeats)
+    return result.to(device) #np.repeat(np.cumsum(np.hstack([0, sizes[:-1]])), repeats)
 
 def _populate_number_fields(data_dict):
   """Returns a dict with the number fields N_NODE, N_EDGE filled in.
