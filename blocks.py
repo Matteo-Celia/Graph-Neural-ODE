@@ -76,7 +76,7 @@ class EdgeBlock(nn.Module):
 
     def forward(self, graph: GraphsTuple):
         edges_to_collect = []
-
+        print(graph.edges.shape,graph.nodes.shape)
         if self._use_edges:
             edges_to_collect.append(torch.tensor(graph.edges))  # edge feature  (50,6)
 
