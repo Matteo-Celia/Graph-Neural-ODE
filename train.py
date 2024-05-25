@@ -80,7 +80,7 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
     # else:
         # Get the inputs (inputs, targets, edge sender and reciever)
     inputs, targets= data
-
+    targets = targets.squeeze(0)
     #R_s = R_s.to(device, non_blocking=True)
     #R_r = R_r.to(device, non_blocking=True)
 
