@@ -24,7 +24,7 @@ class GraphInteractionNetwork(nn.Module):
         self._node_block = blocks.NodeBlock(nodedim, edgedim, use_sent_edges=False, use_globals=False)
         
 
-    def forward(self, t, h): #, args
+    def forward(self, t, h, **kwargs): #, args
         #rebuild matrix
         h = h.squeeze(0) # shape (T,N*D)
         #print(h.shape)
@@ -48,7 +48,7 @@ class UpdateFunction(nn.Module):
         self.Dt = None
         self.linear = nn.Linear(featdim, featdim)
 
-    def forward(self, tao, h): #, args
+    def forward(self, tao, h, **kwargs): #, args
 
         return self.Dt + (self.t-tao)*self.linear(h)
          
