@@ -37,7 +37,7 @@ class GraphInteractionNetwork(nn.Module):
         print(device)
         for node in self.graph.nodes:
             node.to(device)
-        
+        self.graph.nodes.to(device)
         self.graph.edges.to(device)
         self.graph.receivers.to(device)
         self.graph.senders.to(device)
