@@ -330,15 +330,14 @@ def build_senders_receivers(inputs, neighbour_count =2, box_size=6): #15
     return pairwise_distances, senders.long(), receivers.long()
 
 def reconstruction_loss(predictions, targets):
-    rec_loss = []
+    rec_loss =  torch.zeros((predictions.shape[0]))
     print(predictions.shape,targets.shape)
     for i in range(predictions.shape[0]):
 
         diff = predictions[i] - targets[i]
         frobenius_norm = torch.norm(diff, p='fro') #.detach().numpy()
-        rec_loss.append(frobenius_norm**2)
-    
-    rec_loss = torch.tensor(rec_loss)
+        rec_loss[i] = frobenius_norm**2
+    rec_loss.requires_grad_(True)
     loss = torch.sum(rec_loss)
     return loss
 

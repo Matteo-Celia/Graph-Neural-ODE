@@ -83,8 +83,8 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
     targets = targets.squeeze(0)
     #R_s = R_s.to(device, non_blocking=True)
     #R_r = R_r.to(device, non_blocking=True)
-    inputs = torch.tensor(inputs, requires_grad=True)
-    targets = torch.tensor(targets, requires_grad=True)
+    inputs.requires_grad_(True)
+    targets.requires_grad_(True)
     # Push data to the GPU
     inputs = inputs.to(device, non_blocking=True)
     targets = targets.to(device, non_blocking=True)
@@ -96,7 +96,7 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
     start_time = time.perf_counter_ns()
     outputs = model(inputs, dt=dt)
     end_time = time.perf_counter_ns()
-
+    print(outputs.requires_grad)
     # Backward
     loss = reconstruction_loss(outputs, targets) #PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size)
     loss = loss / accumulate_steps
