@@ -65,14 +65,14 @@ class EdgeBlock(nn.Module):
         self._use_sender_nodes = use_sender_nodes
         self._use_globals = use_globals
         N_features = 0
-        pre_features= nodedim
+        
         if self._use_edges:
             N_features += edgedim
         if self._use_receiver_nodes:
             N_features += nodedim
         if self._use_sender_nodes:
             N_features += nodedim
-        self.edgefn = nn.Linear(N_features, pre_features)
+        self.edgefn = nn.Linear(N_features, edgedim)
 
     def forward(self, graph: GraphsTuple):
         edges_to_collect = []
@@ -112,14 +112,14 @@ class NodeBlock(nn.Module):
         self._use_nodes = use_nodes
         self._use_globals = use_globals
         N_features = 0
-        pre_features = nodedim
+        
         if self._use_nodes:
             N_features += nodedim
         if self._use_received_edges:
             N_features += edgedim
         if self._use_sent_edges:
             N_features += edgedim
-        self.linear = nn.Linear(N_features, pre_features)
+        self.nodefn = nn.Linear(N_features, nodedim)
         self._received_edges_aggregator = Aggregator('receivers')
         self._sent_edges_aggregator = Aggregator('senders')
 
@@ -142,8 +142,8 @@ class NodeBlock(nn.Module):
         if self._use_globals:
             nodes_to_collect.append(broadcast_globals_to_nodes(graph))  # (24,4)
 
-        collected_nodes = torch.cat(nodes_to_collect, dim=-1)  # dim =1 or -1?  24,19
-        updated_nodes = self.linear(collected_nodes)  # 24,11
+        collected_nodes = torch.cat(nodes_to_collect, dim=-1)  
+        updated_nodes = self.nodefn(collected_nodes)  
 
         return graph.replace(nodes=updated_nodes)
 
