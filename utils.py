@@ -320,7 +320,7 @@ def build_senders_receivers(inputs, neighbour_count =2, box_size=6): #15
             
             # Get the indices of the k smallest distances (excluding the node itself)
             nearest_indices = torch.topk(dist, k + 1, largest=False).indices[1:]  # Exclude self (distance 0)
-            print(f"nearest indices for node {i} in traj {t} : {nearest_indices}")
+            #print(f"nearest indices for node {i} in traj {t} : {nearest_indices}")
             # Append sender and receiver pairs
             for j in nearest_indices:
                 senders[t,l]= i

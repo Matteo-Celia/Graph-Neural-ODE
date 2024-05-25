@@ -30,8 +30,8 @@ class GraphInteractionNetwork(nn.Module):
         #print(h.shape)
         nodes = h.reshape(-1,self.n_particles,self.nodedim) # shape (T,N,D)
         #recompute graph based on h
-        R_s, R_r = build_senders_receivers(nodes)
-        self.graph = build_GraphTuple(h, R_s, R_r)
+        distances, R_s, R_r = build_senders_receivers(nodes)
+        self.graph = build_GraphTuple(h, distances, R_s, R_r)
         
         new_nodes = self._node_block(self._edge_block(self.graph)).nodes # shape (N_nodes*traj_len,N_features)
         #batch nodes' features as (trajectory_len,num_nodes*nodedim)
