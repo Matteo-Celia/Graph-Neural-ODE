@@ -130,7 +130,7 @@ def validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_
     inputs, targets = test_data
     #R_s = R_s.to(device, non_blocking=True)
     #R_r = R_r.to(device, non_blocking=True)
-
+    targets = targets.squeeze(0)
     # Push to GPU
     inputs = inputs.to(device, non_blocking=True)
     targets = targets.to(device, non_blocking=True)
