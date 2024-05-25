@@ -141,7 +141,7 @@ def _populate_number_fields(data_dict):
     if dct.get(number_field) is None:
       if dct[data_field] is not None:
         dct[number_field] = torch.tensor(
-            torch.shape(dct[data_field])[0], dtype=torch.int32)
+            (dct[data_field]).shape[0], dtype=torch.int32) ##np.shape(..)
       else:
         dct[number_field] = torch.tensor(0, dtype=torch.int32)
   return dct
