@@ -172,7 +172,7 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
     model = GNSTODE(n_particles, box_size=box_size, integrator=integrator, simulation_type=simulation_type)
 
 
-    device = torch.device("cuda" if ((not cpu) and torch.cuda.is_available()) else "cpu")#cuda:0
+    device = torch.device("cuda:0" if ((not cpu) and torch.cuda.is_available()) else "cpu")#cuda:0
     model.to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)#3e-4
