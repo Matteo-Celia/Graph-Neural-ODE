@@ -299,8 +299,8 @@ def build_senders_receivers(inputs, neighbour_count =2, box_size=6): #15
     pairwise_distances = torch.zeros((inputs.shape[0], inputs.shape[1], inputs.shape[1]))
     for i in range(inputs.shape[0]):
 
-        distances = cdist(inputs[i], inputs[i], 'euclidean')  # Shape (N, N)
-        pairwise_distances[i] = torch.from_numpy(distances)
+        distances = torch.cdist(inputs[i], inputs[i], p=2)#cdist(inputs[i], inputs[i], 'euclidean')  # Shape (N, N)
+        pairwise_distances[i] = distances
             
     #print(pairwise_distances.shape,pairwise_distances)
 
