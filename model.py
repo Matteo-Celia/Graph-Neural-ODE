@@ -27,7 +27,7 @@ class GraphInteractionNetwork(nn.Module):
     def forward(self, t, h, **kwargs): #, args
         #rebuild matrix
         h = h.squeeze(0) # shape (T,N*D)
-        #print(h.shape)
+        print(h.shape)
         nodes = h.reshape(-1,self.n_particles,self.nodedim) # shape (T,N,D)
         #recompute graph based on h
         distances, R_s, R_r = build_senders_receivers(nodes)
