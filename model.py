@@ -96,26 +96,28 @@ class GNSTODE(nn.Module):
 
     def forward(self, input_trajectory, dt):
         
-        Xt = input_trajectory
+        Xt = input_trajectory #shape (T,N,D)
         Xt = Xt.squeeze(0)
         
         #spatial processing
         #reshape Xt as (traj_len,N_nodes*N_features)
-        Xt_resh = Xt.reshape(-1,Xt.shape[-2]*Xt.shape[-1])
-        HL = self.spatial_model(Xt_resh,self.L_span)
+        Xt = Xt.reshape(-1,Xt.shape[-2]*Xt.shape[-1])
+        HL = self.spatial_model(Xt,self.L_span)
         
         ##split matrix based on the nodes of each graph and then flatten to build a matrix: (trajectory_len,num_nodes*nodedim) 
         #HL_split = split_matrix_np(HL,len(num_nodes), self.n_particles) 
     
         Dt = self.NN(HL[-1]) #get just the final solution
 
-        Xtpreds = []
 
         #temporal processing
         self.F.Dt = Dt
         
-        Xtpred = self.temporal_model(Xt,self.t_span)
-        Xtpreds.append(Xtpred[-1]) #get just the final solution
+        Xtpreds = self.temporal_model(Xt,self.t_span)
+        #get just the final solution and reshape it as (T,N,D) again
+        #Xtpreds.append(Xtpred[-1].reshape(-1,input_trajectory.shape[-2],Xt.shape[-1])) 
+        Xtpreds = Xtpreds[-1].reshape(-1,input_trajectory.shape[-2],input_trajectory.shape[-1])
+        print(Xtpreds.shape)
 
         # for i,t in enumerate(self.traj_len):
             
@@ -123,4 +125,4 @@ class GNSTODE(nn.Module):
         #     Xtpred = self.temporal_model(Xt[i],self.t_span)
         #     Xtpreds.append(Xtpred)
 
-        return np.array(Xtpreds)
+        return Xtpreds
