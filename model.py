@@ -89,8 +89,8 @@ class GNSTODE(nn.Module):
         nn.Tanh(), 
         nn.Linear(64, self.featdim))
         self.F = UpdateFunction(featdim=self.featdim)
-        self.spatial_model = NeuralODE(self.gin, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3).to(self.device)
-        self.temporal_model = NeuralODE(self.F, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3).to(self.device)
+        self.spatial_model = NeuralODE(self.gin, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3, return_t_eval=False).to(self.device)
+        self.temporal_model = NeuralODE(self.F, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3, return_t_eval=False).to(self.device)
         
         
 
@@ -106,8 +106,8 @@ class GNSTODE(nn.Module):
         
         ##split matrix based on the nodes of each graph and then flatten to build a matrix: (trajectory_len,num_nodes*nodedim) 
         #HL_split = split_matrix_np(HL,len(num_nodes), self.n_particles) 
-        print(HL[0].shape)
-        Dt = self.NN(HL[0][-1]) #get just the final solution
+        print(HL.shape)
+        Dt = self.NN(HL[-1]) #get just the final solution
 
         print(Dt.shape)
         #temporal processing
