@@ -106,7 +106,7 @@ class GNSTODE(nn.Module):
         
         ##split matrix based on the nodes of each graph and then flatten to build a matrix: (trajectory_len,num_nodes*nodedim) 
         #HL_split = split_matrix_np(HL,len(num_nodes), self.n_particles) 
-        print(HL.shape)
+        print(HL[-1].shape)
         Dt = self.NN(HL[-1]) #get just the final solution
 
         print(Dt.shape)
