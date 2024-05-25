@@ -49,9 +49,9 @@ class UpdateFunction(nn.Module):
         self.Dt = None
         self.linear = nn.Linear(featdim, featdim)
 
-    def forward(self, tao, h ): #**kwargs
+    def forward(self, t, x ): #**kwargs
 
-        return self.Dt + (self.t-tao)*self.linear(h)
+        return self.Dt + (self.t-t)*self.linear(x)
          
 
 class GNSTODE(nn.Module):
