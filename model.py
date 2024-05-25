@@ -33,7 +33,11 @@ class GraphInteractionNetwork(nn.Module):
         #recompute graph based on h
         distances, R_s, R_r = build_senders_receivers(nodes)
         self.graph = build_GraphTuple(nodes, distances, R_s, R_r)
-        
+        device = torch.device("cuda" if  torch.cuda.is_available() else "cpu")
+        self.graph.nodes.to(device)
+        self.graph.edges.to(device)
+        self.graph.receivers.to(device)
+        self.graph.senders.to(device)
         new_nodes = self._node_block(self._edge_block(self.graph)).nodes # shape (N_nodes*traj_len,N_features)
         #batch nodes' features as (trajectory_len,num_nodes*nodedim)
         new_h = new_nodes.reshape(-1, self.n_particles*self.nodedim) # shape (T,N*D)
