@@ -331,7 +331,7 @@ def build_senders_receivers(inputs, neighbour_count =2, box_size=6): #15
 
 def reconstruction_loss(predictions, targets):
     rec_loss =  torch.zeros((predictions.shape[0]))
-    print(predictions.shape,targets.shape)
+    #print(predictions.shape,targets.shape)
     for i in range(predictions.shape[0]):
 
         diff = predictions[i] - targets[i]

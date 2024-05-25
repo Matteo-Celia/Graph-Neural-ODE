@@ -96,7 +96,7 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
     start_time = time.perf_counter_ns()
     outputs = model(inputs, dt=dt)
     end_time = time.perf_counter_ns()
-    print(outputs.requires_grad)
+    #print(outputs.requires_grad)
     # Backward
     loss = reconstruction_loss(outputs, targets) #PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size)
     loss = loss / accumulate_steps

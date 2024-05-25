@@ -106,17 +106,17 @@ class GNSTODE(nn.Module):
         
         ##split matrix based on the nodes of each graph and then flatten to build a matrix: (trajectory_len,num_nodes*nodedim) 
         #HL_split = split_matrix_np(HL,len(num_nodes), self.n_particles) 
-        print(HL.shape)
+        #print(HL.shape)
         Dt = self.NN(HL[-1]) #get just the final solution
 
-        print(Dt.shape)
+        #print(Dt.shape)
         #temporal processing
         self.F.Dt = Dt
         
         Xtpreds = self.temporal_model(Xt,self.t_span)
         #get just the final solution and reshape it as (T,N,D) again
         Xtpreds = Xtpreds[-1].reshape(-1,input_trajectory.shape[-2],input_trajectory.shape[-1])
-        print(Xtpreds.shape)
+        #print(Xtpreds.shape)
 
         # for i,t in enumerate(self.traj_len):
             
