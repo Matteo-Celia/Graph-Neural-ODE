@@ -34,7 +34,7 @@ class GraphInteractionNetwork(nn.Module):
         distances, R_s, R_r = build_senders_receivers(nodes)
         self.graph = build_GraphTuple(nodes, distances, R_s, R_r)
         device = torch.device("cuda:0" if  torch.cuda.is_available() else "cpu")
-        print(device)
+        #print(device)
         for node in self.graph.nodes:
             node.to(device)
         self.graph.nodes.to(device)

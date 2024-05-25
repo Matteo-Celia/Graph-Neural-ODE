@@ -9,9 +9,9 @@ from graphs import GraphsTuple
 # import utils_tf
 
 def broadcast_receiver_nodes_to_edges(graph: GraphsTuple):
-    for node in graph.nodes:
+    # for node in graph.nodes:
         
-        print(node.device)
+    #     print(node.device)
 
     # for i in graph.receivers:
     #     if i.device!="cuda:0" and torch.cuda.is_available():
