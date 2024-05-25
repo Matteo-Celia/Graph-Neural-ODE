@@ -84,7 +84,7 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
     #R_s = R_s.to(device, non_blocking=True)
     #R_r = R_r.to(device, non_blocking=True)
     inputs = torch.tensor(inputs, requires_grad=True)
-    targets = torch.tensor(targets)
+    targets = torch.tensor(targets, requires_grad=True)
     # Push data to the GPU
     inputs = inputs.to(device, non_blocking=True)
     targets = targets.to(device, non_blocking=True)
