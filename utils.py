@@ -94,7 +94,7 @@ def _to_compatible_data_dicts(data_dicts):
         result[k] = None
       else:
         dtype = np.int32 if k in [SENDERS, RECEIVERS, N_NODE, N_EDGE] else None
-        result[k] = np.asarray(v, dtype)
+        result[k] = np.asarray(v.cpu(), dtype)
     results.append(result)
   return results
 
