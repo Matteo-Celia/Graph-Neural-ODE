@@ -93,8 +93,8 @@ def _to_compatible_data_dicts(data_dicts):
       if v is None:
         result[k] = None
       else:
-        dtype = np.int32 if k in [SENDERS, RECEIVERS, N_NODE, N_EDGE] else None
-        result[k] = np.asarray(v.cpu(), dtype)
+        dtype = torch.int32 if k in [SENDERS, RECEIVERS, N_NODE, N_EDGE] else None
+        result[k] = torch.tensor(v, dtype=dtype)
     results.append(result)
   return results
 
@@ -112,7 +112,15 @@ def _compute_stacked_offsets(sizes, repeats):
   Returns:
     The index offset per graph.
   """
-  return np.repeat(np.cumsum(np.hstack([0, sizes[:-1]])), repeats)
+    # Compute the cumulative sum of the sizes after including a 0 at the beginning
+  sizes_with_zero = torch.cat([torch.tensor([0]), sizes[:-1]])
+
+  # Compute the cumulative sum
+  cumsum_sizes = torch.cumsum(sizes_with_zero, dim=0)
+
+  # Repeat each element in cumsum_sizes 'repeats' times
+  result = cumsum_sizes.repeat_interleave(repeats)
+  return result #np.repeat(np.cumsum(np.hstack([0, sizes[:-1]])), repeats)
 
 def _populate_number_fields(data_dict):
   """Returns a dict with the number fields N_NODE, N_EDGE filled in.
@@ -166,9 +174,9 @@ def _concatenate_data_dicts(data_dicts):
     if arrays is None:
       concatenated_dicts[field] = None
     elif field in list(GRAPH_NUMBER_FIELDS) + [GLOBALS]:
-      concatenated_dicts[field] = np.stack(arrays)
+      concatenated_dicts[field] = torch.stack(arrays) #np
     else:
-      concatenated_dicts[field] = np.concatenate(arrays, axis=0)
+      concatenated_dicts[field] = torch.cat(arrays, axis=0) #np.conctenate
 
   if concatenated_dicts[RECEIVERS] is not None:
     offset = _compute_stacked_offsets(concatenated_dicts[N_NODE],
@@ -253,7 +261,7 @@ def build_GraphTuple(inputs, distances, R_s, R_r):
             dist = distances[i,R_s[i,j],R_r[i,j]]
             edge_feat.append(dist)
            
-        edges = np.array(edge_feat).reshape((R_s.shape[1],1))
+        edges = torch.tensor(edge_feat).reshape((R_s.shape[1],1))
         data_dict= {
         "globals": None,
         "nodes": inputs[i],
