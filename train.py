@@ -235,6 +235,7 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
     model.train() #needed?
     for epoch in range(starting_epoch, epochs):
         optimizer.zero_grad()
+        print(f"epoch : {epoch}")
         for i, data in enumerate(train_loader, 0):
             # Do one training step and get loss value
             
