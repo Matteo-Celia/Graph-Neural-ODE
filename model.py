@@ -65,7 +65,7 @@ class GNSTODE(nn.Module):
     #at each forward pass:
     
     
-    def __init__(self, n_particles, space_int=100, temp_int=100, box_size=6, integrator='rk4', simulation_type='gravity'):
+    def __init__(self, n_particles, space_int=100, temp_int=100, box_size=6, integrator='dopri5', simulation_type='gravity'):
         super(GNSTODE, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
@@ -105,7 +105,7 @@ class GNSTODE(nn.Module):
         
         Xt = input_trajectory #shape (T,N,D)
         Xt = Xt.squeeze(0)
-        
+        print("GNSTODE forward")
         #spatial processing
         #reshape Xt as (traj_len,N_nodes*N_features)
         Xt = Xt.reshape(-1,Xt.shape[-2]*Xt.shape[-1])
