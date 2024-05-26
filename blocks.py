@@ -85,7 +85,7 @@ class EdgeBlock(nn.Module):
         edges_to_collect = []
         #print(graph.edges.shape,graph.nodes.shape)
         if self._use_edges:
-            edges_to_collect.append(torch.tensor(graph.edges))  # edge feature  (50,6)
+            edges_to_collect.append(graph.edges)  # remove torch
 
         if self._use_receiver_nodes:
             edges_to_collect.append(broadcast_receiver_nodes_to_edges(graph))  # (50,5)
@@ -137,14 +137,14 @@ class NodeBlock(nn.Module):
         # edges: (50,10)  
         # global: (4,4)
 
+        if self._use_nodes:
+            nodes_to_collect.append(graph.nodes) #remove torch
+
         if self._use_received_edges:
             nodes_to_collect.append(self._received_edges_aggregator(graph))  # (24,10)
 
         if self._use_sent_edges:
             nodes_to_collect.append(self._sent_edges_aggregator(graph))
-
-        if self._use_nodes:
-            nodes_to_collect.append(torch.tensor(graph.nodes))
 
         if self._use_globals:
             nodes_to_collect.append(broadcast_globals_to_nodes(graph))  # (24,4)

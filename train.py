@@ -155,11 +155,11 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
 
     # Load training dataset
     train_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='train', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=False, num_workers=data_loader_workers, pin_memory=True) #collate_fn=collate_into_one_graph,
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=False, num_workers=0, pin_memory=True) #collate_fn=collate_into_one_graph,
 
     # Load validation dataset
     validation_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='validation', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
-    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=batch_size, shuffle=False, num_workers=data_loader_workers,  pin_memory=True) #collate_fn=collate_into_one_graph,
+    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=batch_size, shuffle=False, num_workers=0,  pin_memory=True) #collate_fn=collate_into_one_graph,
 
     # Get parameters form dataset
     box_size = train_set.box_size
