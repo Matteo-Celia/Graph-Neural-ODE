@@ -697,9 +697,9 @@ class TrajectoryDataset_New(Dataset):
         self.rollout = rollout
 
         # Count total number of training samples available
-        
-        self.no_of_samples = self.trajectory_count #*self.trajectory_len
-       
+        self.trajectories = self.trajectories[:3]
+        self.no_of_samples = 3#self.trajectory_count #*self.trajectory_len
+
 
 
     def __len__(self):
