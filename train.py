@@ -163,7 +163,7 @@ def validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_
 
     return test_loss.item()
 
-def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_rate=1e-3, lr_decay=0.97725, batch_size=1, epochs=200, accumulate_steps=1, model_dir="models", data_dir="data",
+def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_rate=1e-3, lr_decay=0.97725, batch_size=50, epochs=200, accumulate_steps=1, model_dir="models", data_dir="data",
                 hidden_units=-1, validate=True, validate_epochs=1, graph_type='_nn', integrator='dopri5',
                 pre_load_graphs=False, data_loader_workers=2, smooth_lr_decay=False, target_step=1, cpu=False, experiment_dir="", log_dir="runs", resume_checkpoint="", save_after_time=0):
     # Track time for saving after x seconds
@@ -174,11 +174,11 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
 
     # Load training dataset
     train_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='train', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
-    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=False, num_workers=0, pin_memory=True) #collate_fn=collate_into_one_graph,
+    train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=False, num_workers=data_loader_workers, pin_memory=True) #collate_fn=collate_into_one_graph,
 
     # Load validation dataset
     validation_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='validation', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
-    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=batch_size, shuffle=False, num_workers=0,  pin_memory=True) #collate_fn=collate_into_one_graph,
+    validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=batch_size, shuffle=False, num_workers=data_loader_workers,  pin_memory=True) #collate_fn=collate_into_one_graph,
 
     # Get parameters form dataset
     box_size = train_set.box_size

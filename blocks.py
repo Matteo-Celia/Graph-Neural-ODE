@@ -52,8 +52,8 @@ class Aggregator(nn.Module):
         aggrated_list = []
         for i in range(N_nodes):
             aggrated = edges[indices == i] #all edges features that have node i as sender/receiver
-            if aggrated.shape[0] == 0:
-                aggrated = torch.zeros(1, N_features)
+            #if aggrated.shape[0] == 0:
+            #    aggrated = torch.zeros(1, N_features)
             aggrated_list.append(torch.sum(aggrated, dim=0))
         return torch.stack(aggrated_list,dim=0)
 
