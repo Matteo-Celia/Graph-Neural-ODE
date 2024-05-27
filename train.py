@@ -15,6 +15,21 @@ from model import  GNSTODE
 from utils import reconstruction_loss,PBC_MSE_loss, create_folder,  data_dicts_to_graphs_tuple, pbc_diff, build_GraphTuple
 from eval import evaluate_model
 
+class ReconstructionLoss(nn.Module):
+    def __init__(self):
+        super(ReconstructionLoss, self).__init__()
+        
+        
+    def forward(self, predictions, targets):
+        
+        diff = predictions - targets
+        frobenius_norm = torch.norm(diff.float(), p='fro') 
+        loss = frobenius_norm**2
+        rec_loss = torch.sum(loss)
+
+        return rec_loss
+
+
 def training_step_static_graph(model, data, R_s, R_r, dt, device, accumulate_steps, box_size):
     # Get the inputs
     inputs, targets = data
@@ -98,7 +113,9 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
     end_time = time.perf_counter_ns()
     #print(outputs.requires_grad)
     # Backward
-    loss = reconstruction_loss(outputs, targets) #PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size)
+    #criterion = ReconstructionLoss()
+    #loss = criterion(outputs, targets)
+    loss = reconstruction_loss(outputs, targets) 
     loss = loss / accumulate_steps
     loss.backward()
 
