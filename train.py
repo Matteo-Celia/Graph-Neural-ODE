@@ -377,7 +377,7 @@ if __name__ == "__main__":
     parser.add_argument('--graph_type', action='store', default="_nn",
                         dest='graph_type',
                         help='Set type of the graaph to use')
-    parser.add_argument('--integrator', action='store', default="rk4", #dopri5
+    parser.add_argument('--integrator', action='store', default="euler", #dopri5
                         dest='integrator',
                         help='Set integrator to use for HOGN and OGN models')
     parser.add_argument('--dont_pre_load_graphs', action="store_false", default=True,

@@ -68,7 +68,7 @@ class GNSTODE(nn.Module):
     #at each forward pass:
     
     
-    def __init__(self, n_particles, space_int=50, temp_int=50, box_size=6, integrator='rk4', simulation_type='gravity'):
+    def __init__(self, n_particles, space_int=50, temp_int=50, box_size=6, integrator='euler', simulation_type='gravity'):
         super(GNSTODE, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
