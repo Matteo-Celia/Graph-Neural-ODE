@@ -698,9 +698,13 @@ class TrajectoryDataset_New(Dataset):
 
         # Count total number of training samples available
         #self.trajectories = self.trajectories[:3]
-        self.data = self.data[:200*self.trajectory_len]
-        self.no_of_samples = 200*self.trajectory_len#self.trajectory_count*self.trajectory_len
+        if split == "train":
 
+            count = 200*self.trajectory_len
+            self.data = self.data[:count]
+            self.no_of_samples = count -1 #self.trajectory_count*self.trajectory_len
+
+        self.no_of_samples = self.trajectory_count*self.trajectory_len
 
 
     def __len__(self):

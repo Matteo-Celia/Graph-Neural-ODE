@@ -300,6 +300,7 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
         # Evaluate on validation set every validate_epochs epoch. Always validate and save the model after the last epoch
         # No with torch.no_grad() since HOGN needs gradients
         if (validate and (epoch % validate_epochs == 0)) or (epoch == epochs - 1) :
+            print("Validation starting")
             model.eval()
             running_test_loss = 0.0
             for p in model.parameters():
