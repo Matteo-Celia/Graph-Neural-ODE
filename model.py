@@ -54,18 +54,21 @@ class UpdateFunction(nn.Module):
         super(UpdateFunction,self).__init__()
         self.t = 0
         self.Dt = None
-        self.linear = nn.Linear(featdim, featdim)
+        self.nn = nn.Sequential(
+        nn.Linear(featdim, 64),
+        nn.Tanh(), 
+        nn.Linear(64, featdim))
 
     def forward(self, t, x, **kwargs ): #**kwargs
 
-        return self.Dt + (self.t-t)*self.linear(x)
+        return self.Dt + (t-self.t)*self.nn(x)
          
 
 class GNSTODE(nn.Module):
     #at each forward pass:
     
     
-    def __init__(self, n_particles, space_int=100, temp_int=100, box_size=6, integrator='dopri5', simulation_type='gravity'):
+    def __init__(self, n_particles, space_int=50, temp_int=50, box_size=6, integrator='rk4', simulation_type='gravity'):
         super(GNSTODE, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
@@ -96,8 +99,8 @@ class GNSTODE(nn.Module):
         nn.Tanh(), 
         nn.Linear(64, self.featdim))
         self.F = UpdateFunction(featdim=self.featdim)
-        self.spatial_model = NeuralODE(self.gin, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3, return_t_eval=False).to(self.device)
-        self.temporal_model = NeuralODE(self.F, sensitivity='adjoint', solver=self.integrator, interpolator=None, atol=1e-3, rtol=1e-3, return_t_eval=False).to(self.device)
+        self.spatial_model = NeuralODE(self.gin, sensitivity='adjoint', solver=self.integrator, interpolator=None, return_t_eval=False).to(self.device) #atol=1e-3, rtol=1e-3, 
+        self.temporal_model = NeuralODE(self.F, sensitivity='adjoint', solver=self.integrator, interpolator=None, return_t_eval=False).to(self.device) #atol=1e-3, rtol=1e-3,
         
         
 

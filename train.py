@@ -113,9 +113,9 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
     end_time = time.perf_counter_ns()
     #print(outputs.requires_grad)
     # Backward
-    #criterion = ReconstructionLoss()
-    #loss = criterion(outputs, targets)
-    loss = reconstruction_loss(outputs, targets) 
+    criterion = ReconstructionLoss()
+    loss = criterion(outputs, targets)
+    #loss = reconstruction_loss(outputs, targets) 
     loss = loss / accumulate_steps
     loss.backward()
 
@@ -155,9 +155,11 @@ def validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_
     #graph = build_GraphTuple(inputs, R_s, R_r)
     # Get outputs
     outputs = model(inputs, dt=dt)
-
+    criterion = ReconstructionLoss()
+    test_loss = criterion(outputs, targets)
+    #loss = reconstruction_loss(outputs, targets) 
     # Get loss
-    test_loss = reconstruction_loss(outputs, targets)#PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
+    #test_loss = reconstruction_loss(outputs, targets)#PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
 
     return test_loss.item()
 
@@ -319,6 +321,7 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
 
             # Log validation loss for tensorboard
             validation_loss = running_test_loss / len(validation_loader)
+            print(f"Validation loss at epoch {epoch} is : {validation_loss}")
             writer.add_scalar('Loss/validation', validation_loss, n_iter)
 
 
@@ -350,7 +353,7 @@ if __name__ == "__main__":
     parser.add_argument('--lr_decay', action='store', type=float, default=0.1, # use 0.97725 instead if decaying every epoch (smooth_lr_decay flag)
                         dest='lr_decay',
                         help='Set learning rate decay')
-    parser.add_argument('--batch_size', action='store', type=int, default=1, #50
+    parser.add_argument('--batch_size', action='store', type=int, default=50, #50
                         dest='batch_size',
                         help='Set batch size')
     parser.add_argument('--epochs', action='store', type=int, default=200,
@@ -374,7 +377,7 @@ if __name__ == "__main__":
     parser.add_argument('--graph_type', action='store', default="_nn",
                         dest='graph_type',
                         help='Set type of the graaph to use')
-    parser.add_argument('--integrator', action='store', default="dopri5",
+    parser.add_argument('--integrator', action='store', default="rk4", #dopri5
                         dest='integrator',
                         help='Set integrator to use for HOGN and OGN models')
     parser.add_argument('--dont_pre_load_graphs', action="store_false", default=True,

@@ -675,14 +675,14 @@ class TrajectoryDataset_New(Dataset):
         # if self.pre_load_graphs or self.n_particles < 10000 or self.split == 'test':
         # else:
         self.trajectories = torch.zeros((self.trajectory_count, self.trajectory_len, self.n_particles, self.n_features))
-        #self.data = torch.zeros((self.trajectory_count * self.trajectory_len - self.trajectory_count, 2, self.n_particles, self.n_features)) # each particle state is [m, x, y, v_x, v_y]
+        self.data = torch.zeros((self.trajectory_count * self.trajectory_len - self.trajectory_count, 2, self.n_particles, self.n_features)) # each particle state is [m, x, y, v_x, v_y]
         for i in range(self.trajectory_count):
             self.trajectories[i] = torch.from_numpy(np.load(os.path.join(self.split_folder, f"simulated_trajectory_{i}.npy")).astype(np.float32))
         
-        # k=0
-        # for i in range(self.trajectory_count):
-        #     for j in range(self.trajectory_len-1):
-        #         self.data[k] = torch.from_numpy(np.array(([self.trajectories[i][j],self.trajectories[i][j+1]])))
+        k=0
+        for i in range(self.trajectory_count):
+            for j in range(self.trajectory_len-1):
+                self.data[k] = torch.from_numpy(np.array(([self.trajectories[i][j],self.trajectories[i][j+1]])))
 
         
         #self.data = self.trajectories.view(self.trajectory_count * self.trajectory_len, self.n_particles, self.n_features)
@@ -697,8 +697,8 @@ class TrajectoryDataset_New(Dataset):
         self.rollout = rollout
 
         # Count total number of training samples available
-        self.trajectories = self.trajectories[:3]
-        self.no_of_samples = 3#self.trajectory_count #*self.trajectory_len
+        #self.trajectories = self.trajectories[:3]
+        self.no_of_samples = self.trajectory_count*self.trajectory_len
 
 
 
@@ -707,8 +707,8 @@ class TrajectoryDataset_New(Dataset):
 
     def __getitem__(self, idx):
         
-        inputs = self.trajectories[idx, :-1]
-        targets = self.trajectories[idx, 1:]
-            
+        #inputs = self.trajectories[idx, :-1]
+        #targets = self.trajectories[idx, 1:]
+        inputs, targets = self.data[idx][0], self.data[idx][1]
         return inputs, targets #torch.from_numpy(graph[:,0].astype(np.int64)), torch.from_numpy(graph[:,1].astype(np.int64))
         
