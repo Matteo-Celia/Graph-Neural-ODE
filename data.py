@@ -701,10 +701,10 @@ class TrajectoryDataset_New(Dataset):
         if split == "train":
 
             count = 200*self.trajectory_len
-            self.data = self.data[:count]
-            self.no_of_samples = count -1 #self.trajectory_count*self.trajectory_len
-
-        self.no_of_samples = self.trajectory_count*self.trajectory_len
+            
+            self.no_of_samples = count  #self.trajectory_count*self.trajectory_len
+        else:
+            self.no_of_samples = self.trajectory_count*self.trajectory_len
 
 
     def __len__(self):
