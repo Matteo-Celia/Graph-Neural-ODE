@@ -704,7 +704,7 @@ class TrajectoryDataset_New(Dataset):
             
             self.no_of_samples = count  #self.trajectory_count*self.trajectory_len
         else:
-            self.no_of_samples = self.trajectory_count*self.trajectory_len
+            self.no_of_samples = self.trajectory_count*self.trajectory_len - self.trajectory_count
 
 
     def __len__(self):
