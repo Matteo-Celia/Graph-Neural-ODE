@@ -108,7 +108,7 @@ class GNSTODE(nn.Module):
         
         Xt = input_trajectory #shape (T,N,D)
         Xt = Xt.squeeze(0)
-        print("GNSTODE forward")
+        #print("GNSTODE forward")
         #spatial processing
         #reshape Xt as (traj_len,N_nodes*N_features)
         Xt = Xt.reshape(-1,Xt.shape[-2]*Xt.shape[-1])
