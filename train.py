@@ -3,6 +3,7 @@ import torch.optim as optim
 import torch.nn as nn
 import torch
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 import os
 from math import inf
 import time
@@ -255,7 +256,8 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
     for epoch in range(starting_epoch, epochs):
         optimizer.zero_grad()
         print(f"epoch : {epoch}")
-        for i, data in enumerate(train_loader, 0):
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}", unit="batch")
+        for i, data in enumerate(pbar):
             # Do one training step and get loss value
             
             loss_value, forward_pass_time = training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_size, graph_type, simulation_type)
@@ -305,7 +307,8 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
             running_test_loss = 0.0
             for p in model.parameters():
                 p.require_grads = False
-            for j, test_data in enumerate(validation_loader, 0):
+            pbarval = tqdm(validation_loader, desc=f"Epoch {epoch+1}/{epochs}", unit="batch")
+            for j, test_data in enumerate(pbarval):
                 # Ensure no grad is left before validation step
                 optimizer.zero_grad()
                 #if model_type == "NewMultiLevelHOGNDown5":
