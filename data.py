@@ -694,17 +694,17 @@ class TrajectoryDataset_New(Dataset):
         #self.graph_folder = os.path.join(self.split_folder, 'graphs', self.graph_type)
 
         # If rollout data is requested return full trajectories, otherwise one t, t+1 pair is returned
-        self.rollout = rollout
+        #self.rollout = rollout
 
         # Count total number of training samples available
         #self.trajectories = self.trajectories[:3]
-        if split == "train":
+        # if split == "train":
 
-            count = 200*self.trajectory_len
+        #     count = 200*self.trajectory_len
             
-            self.no_of_samples = count  #self.trajectory_count*self.trajectory_len
-        else:
-            self.no_of_samples = self.trajectory_count*self.trajectory_len - self.trajectory_count
+        #     self.no_of_samples = count  #self.trajectory_count*self.trajectory_len
+        # else:
+        self.no_of_samples = self.trajectory_count*self.trajectory_len - self.trajectory_count
 
 
     def __len__(self):
@@ -715,5 +715,5 @@ class TrajectoryDataset_New(Dataset):
         #inputs = self.trajectories[idx, :-1]
         #targets = self.trajectories[idx, 1:]
         inputs, targets = self.data[idx][0], self.data[idx][1]
-        return inputs, targets #torch.from_numpy(graph[:,0].astype(np.int64)), torch.from_numpy(graph[:,1].astype(np.int64))
+        return inputs, targets
         

@@ -164,7 +164,7 @@ def validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_
 
     return test_loss.item()
 
-def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_rate=1e-3, lr_decay=0.97725, batch_size=50, epochs=200, accumulate_steps=1, model_dir="models", data_dir="data",
+def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_rate=1e-3, lr_decay=0.97725, batch_size=50, epochs=10, accumulate_steps=1, model_dir="models", data_dir="data",
                 hidden_units=-1, validate=True, validate_epochs=2, graph_type='_nn', integrator='dopri5',
                 pre_load_graphs=False, data_loader_workers=2, smooth_lr_decay=False, target_step=1, cpu=False, experiment_dir="", log_dir="runs", resume_checkpoint="", save_after_time=0):
     # Track time for saving after x seconds
@@ -360,7 +360,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', action='store', type=int, default=50, #50
                         dest='batch_size',
                         help='Set batch size')
-    parser.add_argument('--epochs', action='store', type=int, default=200,
+    parser.add_argument('--epochs', action='store', type=int, default=10, #200
                         dest='epochs',
                         help='Set number of epochs')
     parser.add_argument('--accumulate_steps', action='store', type=int, default=1,
@@ -375,7 +375,7 @@ if __name__ == "__main__":
     parser.add_argument('--dont_validate', action="store_false", default=True,
                         dest='validate',
                         help='Do not validate model each epoch')
-    parser.add_argument('--validate_every', action="store", type=int, default=2,
+    parser.add_argument('--validate_every', action="store", type=int, default=5,
                         dest='validate_every',
                         help='Validate model every n epochs')
     parser.add_argument('--graph_type', action='store', default="_nn",
