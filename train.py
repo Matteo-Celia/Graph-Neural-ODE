@@ -31,82 +31,20 @@ class ReconstructionLoss(nn.Module):
         return rec_loss
 
 
-def training_step_static_graph(model, data, R_s, R_r, dt, device, accumulate_steps, box_size):
-    # Get the inputs
-    inputs, targets = data
-
-    # Push them to the GPU
-    inputs = inputs.to(device, non_blocking=True)
-    targets = targets.to(device, non_blocking=True)
-
-    # Forward + backward + optimize
-    start_time = time.perf_counter_ns()
-    outputs = model(inputs, R_s, R_r, dt=dt)
-    end_time = time.perf_counter_ns()
-    loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size)
-    loss = loss / accumulate_steps
-    loss.backward()
-    
-    return loss.item(), (end_time - start_time)
-
-def validation_step_static_graph(model, test_data, R_s, R_r, dt, device, box_size):
-    # Get validation data
-    inputs, targets = test_data
-
-    # Push to GPU
-    inputs = inputs.to(device, non_blocking=True)
-    targets = targets.to(device, non_blocking=True)
-
-    # Get outputs
-    outputs = model(inputs, R_s, R_r, dt=dt)
-    # Get loss
-    test_loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
-
-    return test_loss.item()
-
-
-
-
 
 def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_size, graph_type, simulation_type):
 
-    # if '_level_hierarchical' in graph_type:
-    #     inputs, targets, R_s, R_r, assignment, V_super, super_graph = data
-
-    #     # Push data to the GPU
-    #     inputs = inputs.to(device, non_blocking=True)
-    #     targets = targets.to(device, non_blocking=True)
-    #     R_s = R_s.to(device, non_blocking=True)
-    #     R_r = R_r.to(device, non_blocking=True)
-    #     assignment = [el.to(device, non_blocking=True) for el in assignment]
-    #     V_super = [el.to(device, non_blocking=True) for el in V_super]
-    #     super_graph = [el.to(device, non_blocking=True) for el in super_graph]
-
-    #     # Forward pass (and time it)
-    #     start_time = time.perf_counter_ns()
-    #     outputs = model(inputs, R_s, R_r, assignment, V_super, super_graph, dt=dt)
-    #     end_time = time.perf_counter_ns()
-    #     loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size)
-
-    #     # Backward
-    #     loss = loss / accumulate_steps
-    #     loss.backward()
-    #     return loss.item(), (end_time - start_time)
-
-    # else:
-        # Get the inputs (inputs, targets, edge sender and reciever)
+  
     inputs, targets= data
     targets = targets.squeeze(0)
-    #R_s = R_s.to(device, non_blocking=True)
-    #R_r = R_r.to(device, non_blocking=True)
+    
     inputs.requires_grad_(True)
     targets.requires_grad_(True)
     # Push data to the GPU
     inputs = inputs.to(device, non_blocking=True)
     targets = targets.to(device, non_blocking=True)
 
-    #build GraphTuple object to pass to the model
-    #graphs = build_GraphTuple(inputs, R_s, R_r, simulation_type)
+    
 
     # Forward pass (and time it)
     start_time = time.perf_counter_ns()
@@ -116,7 +54,7 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
     # Backward
     criterion = ReconstructionLoss()
     loss = criterion(outputs, targets)
-    #loss = reconstruction_loss(outputs, targets) 
+
     loss = loss / accumulate_steps
     loss.backward()
 
@@ -124,36 +62,14 @@ def training_step_dynamic_graph(model, data, dt, device, accumulate_steps, box_s
 
 def validation_step_dynamic_graph(model, test_data, dt, device, box_size, graph_type):
 
-    # if '_level_hierarchical' in graph_type:
-    #     inputs, targets, R_s, R_r, assignment, V_super, super_graph = test_data
-
-    #     # Push data to the GPU
-    #     inputs = inputs.to(device, non_blocking=True)
-    #     targets = targets.to(device, non_blocking=True)
-    #     R_s = R_s.to(device, non_blocking=True)
-    #     R_r = R_r.to(device, non_blocking=True)
-    #     assignment = [el.to(device, non_blocking=True) for el in assignment]
-    #     V_super = [el.to(device, non_blocking=True) for el in V_super]
-    #     super_graph = [el.to(device, non_blocking=True) for el in super_graph]
-
-    #     outputs = model(inputs, R_s, R_r, assignment, V_super, super_graph, dt=dt)
-
-    #     test_loss = PBC_MSE_loss(outputs, targets[:,:,-4:], box_size=box_size).cpu().detach()
-
-    #     return test_loss.item()
-
-    # else:
-
-        # Get the inputs (inputs, targets, edge sender and reciever)
+    
     inputs, targets = test_data
-    #R_s = R_s.to(device, non_blocking=True)
-    #R_r = R_r.to(device, non_blocking=True)
     targets = targets.squeeze(0)
     # Push to GPU
     inputs = inputs.to(device, non_blocking=True)
     targets = targets.to(device, non_blocking=True)
     
-    #graph = build_GraphTuple(inputs, R_s, R_r)
+    
     # Get outputs
     outputs = model(inputs, dt=dt)
     criterion = ReconstructionLoss()
@@ -194,6 +110,15 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
 
     device = torch.device("cuda:0" if ((not cpu) and torch.cuda.is_available()) else "cpu")#cuda:0
     model.to(device)
+
+    load = True
+    if load:
+        checkpoint = torch.load('load/GNSTODE_euler_lr_0.0003_decay_0.1_epochs_10_batch_size_50_accumulate_steps_1_graph__nn_target_step_1_20240602-134653_91372NHJ0T_checkpoint.tar')
+        model.load_state_dict(checkpoint['model_state_dict'])
+
+# If needed, load the optimizer state
+# optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+# optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)#3e-4
     scheduler = optim.lr_scheduler.ExponentialLR(optimizer, lr_decay) # decay every 2 * 10^5 with lower imit of 10^-7
