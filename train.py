@@ -115,13 +115,20 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
     if load:
         checkpoint = torch.load('load/GNSTODE_euler_lr_0.0003_decay_0.1_epochs_10_batch_size_50_accumulate_steps_1_graph__nn_target_step_1_20240602-134653_91372NHJ0T_checkpoint.tar')
         model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)#3e-4
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    else:
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)#3e-4
+
+    
+    scheduler = optim.lr_scheduler.ExponentialLR(optimizer, lr_decay) # decay every 2 * 10^5 with lower imit of 10^-7
 
 # If needed, load the optimizer state
 # optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)#3e-4
-    scheduler = optim.lr_scheduler.ExponentialLR(optimizer, lr_decay) # decay every 2 * 10^5 with lower imit of 10^-7
+    # optimizer = optim.Adam(model.parameters(), lr=learning_rate)#3e-4
+    # scheduler = optim.lr_scheduler.ExponentialLR(optimizer, lr_decay) # decay every 2 * 10^5 with lower imit of 10^-7
 
     # Track iterations and running loss for loging
     n_iter = 0
