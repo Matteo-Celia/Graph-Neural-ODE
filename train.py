@@ -307,7 +307,7 @@ if __name__ == "__main__":
     parser.add_argument('--dont_validate', action="store_false", default=True,
                         dest='validate',
                         help='Do not validate model each epoch')
-    parser.add_argument('--validate_every', action="store", type=int, default=5,
+    parser.add_argument('--validate_every', action="store", type=int, default=1,
                         dest='validate_every',
                         help='Validate model every n epochs')
     parser.add_argument('--graph_type', action='store', default="_nn",
