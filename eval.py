@@ -102,8 +102,7 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
 
     # if model_type == "DeltaGN":
     #     model = DeltaGN(box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, simulation_type=simulation_type)
-    if model_type == "GNSTODE":
-        model = GNSTODE(n_particles, box_size=box_size, integrator=integrator, simulation_type=simulation_type)
+    model = GNSTODE(n_particles, box_size=box_size, integrator=integrator, simulation_type=simulation_type)
 
     model.load_state_dict(torch.load(model_dir))  #model path
 
