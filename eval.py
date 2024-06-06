@@ -15,7 +15,7 @@ class RMSE(torch.nn.Module):
         super(RMSE, self).__init__()
         
         
-    def forward(self, predictions, targets, ):
+    def forward(self, predictions, targets ):
         
         diff = predictions - targets
         frobenius_norm = torch.linalg.matrix_norm(diff.float(), p='fro') 
@@ -174,7 +174,7 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
                 output_trajectory[j+1, :, :] = current_state.detach() # [timesteps, particles, state]; state = [m,x,y,v_x,v_y]
 
             rmse = RMSE()
-            print("RMSE for trajectory %i: %f" % (i , rmse(output_trajectory, targets))) 
+            print("RMSE for trajectory %i: %f" % (i , rmse(output_trajectory[1:], targets))) 
         
             # Save the predicted trajectory
             output_filename = os.path.join(output_folder_path,"predicted_trajectory_{i}.npy".format(i=i))
