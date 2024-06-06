@@ -171,7 +171,7 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
                 output = model(current_state, dt)
                 current_state = output.detach() # Detach to stop graph unroll in next loop iteration 
                 
-                output_trajectory[j+1, :, :] = current_state.detach() # [timesteps, particles, state]; state = [m,x,y,v_x,v_y]
+                output_trajectory[j+1, :, :] = current_state.detach().to(device) # [timesteps, particles, state]; state = [m,x,y,v_x,v_y]
 
             rmse = RMSE()
             print("RMSE for trajectory %i: %f" % (i , rmse(output_trajectory[1:], targets))) 
