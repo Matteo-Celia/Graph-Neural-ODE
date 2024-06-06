@@ -138,7 +138,8 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
             # Get the inputs as full trajectory
             #if graph_type == 'fully_connected':
             inputs, targets = data
-            
+            inputs = inputs.squeeze(0)
+            targets = targets.squeeze(0)
             inputs = inputs.to(device, non_blocking=True)
             targets = targets.to(device, non_blocking=True)
             # elif '_level_hierarchical' in graph_type:
