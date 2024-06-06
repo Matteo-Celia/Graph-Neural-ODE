@@ -159,7 +159,7 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
             #     raise ValueError('Graph type not recognized')
 
             # Log the predicted trajecotry
-            output_trajectory = np.zeros((inputs.shape[0]+1, inputs.shape[1], inputs.shape[2]))
+            output_trajectory = torch.zeros((inputs.shape[0]+1, inputs.shape[1], inputs.shape[2]))
             output_trajectory[0] = inputs[0] #.numpy()
 
             # Forward pass 
