@@ -79,10 +79,8 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
         target_step = 1
 
     # Get integrator type from the filename
-    if 'euler' in model_file or 'rk1' in model_file:
-        integrator = 'euler' 
-    else:
-        integrator = 'rk4' 
+    integrator = 'euler' 
+    
 
     # Use batch_size=1 for inference
     batch_size = 1
@@ -159,6 +157,7 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
             #     raise ValueError('Graph type not recognized')
 
             # Log the predicted trajecotry
+            print(inputs.shape)
             output_trajectory = torch.zeros((inputs.shape[0]+1, inputs.shape[1], inputs.shape[2]))
             output_trajectory[0] = inputs[0] #.numpy()
 
