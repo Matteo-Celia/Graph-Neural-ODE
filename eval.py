@@ -18,7 +18,7 @@ class RMSE(torch.nn.Module):
     def forward(self, predictions, targets ):
         
         diff = predictions - targets
-        frobenius_norm = torch.linalg.matrix_norm(diff.float(), p='fro') 
+        frobenius_norm = torch.linalg.matrix_norm(diff.float()) 
         sqrd_fn = frobenius_norm**2
         rec_loss = torch.sum(sqrd_fn)
         if len(predictions.shape) ==4:
