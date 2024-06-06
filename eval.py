@@ -4,6 +4,7 @@ import os
 import shutil
 import argparse
 import re
+from tqdm import tqdm
 
 from data import TrajectoryDataset, TrajectoryDataset_New
 from model import GNSTODE
@@ -132,8 +133,8 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
     predicted_trajectories = []
 
     print("Evaluationg model %s on %s test dataset" % (model_file, dataset))
-
-    for i, data in enumerate(test_loader, 0):
+    pbar = tqdm(test_loader, desc=f"Testing", unit="batch")
+    for i, data in enumerate(pbar):
         if start_id <= i < end_id:
             # Get the inputs as full trajectory
             #if graph_type == 'fully_connected':
@@ -158,7 +159,7 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
             #     raise ValueError('Graph type not recognized')
 
             # Log the predicted trajecotry
-            print(inputs.shape)
+            print(inputs.shape, targets.shape)
             output_trajectory = torch.zeros((inputs.shape[0]+1, inputs.shape[1], inputs.shape[2]))
             output_trajectory[0] = inputs[0] #.numpy()
 
