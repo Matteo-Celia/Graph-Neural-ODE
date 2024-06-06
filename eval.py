@@ -30,7 +30,7 @@ class RMSE(torch.nn.Module):
         return loss
 
 
-def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph_type="", model_dir="models", data_dir="data", experiment_dir="", pre_load_graphs=True, start_id=0, end_id=-1):
+def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="", graph_type="", model_dir="models", data_dir="data", experiment_dir="", pre_load_graphs=True, start_id=0, end_id=-1):
 
     # Set evaluation dataset as model dataset (dataset model was trained on) if no model dataset was specified
     if len(model_dataset) < 1:
@@ -196,7 +196,7 @@ def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph
 
 if __name__ == "__main__":
     # Parse command line arguments
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()              #models
     parser.add_argument('--model_dir', action='store', default="models",
                         dest='model_dir',
                         help='Set model directory')
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     parser.add_argument('--model_dataset', action='store', default="",
                         dest='model_dataset',
                         help='Set dataset model was trained on (by default --dataset value is used)')
-    parser.add_argument('--dataset', action='store', default="3_particles",
+    parser.add_argument('--dataset', action='store', default="3_particles_gravity",
                         dest='dataset',
                         help='Set dataset to use (if model_dataset is set this dataset is used for evaluation only)')
     parser.add_argument('--graph_type', action='store', default="",
