@@ -104,7 +104,8 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
     #     model = DeltaGN(box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, simulation_type=simulation_type)
     model = GNSTODE(n_particles, box_size=box_size, integrator=integrator, simulation_type=simulation_type)
 
-    model.load_state_dict(torch.load(model_dir))  #model path
+    checkpoint = torch.load(model_dir)
+    model.load_state_dict(checkpoint['model_state_dict']) # model path
 
     # Remove old output subfolder if it exists in case all trajectories will be built
     # if start_id == 0 and end_id == -1:
