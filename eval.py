@@ -179,7 +179,7 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
         
             # Save the predicted trajectory
             output_filename = os.path.join(output_folder_path,"predicted_trajectory_{i}.npy".format(i=i))
-            np.save(output_filename, output_trajectory)
+            #np.save(output_filename, output_trajectory)
 
             # Log for RMS over all trajectories
             predicted_trajectories.append(output_trajectory)
