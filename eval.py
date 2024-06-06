@@ -186,7 +186,7 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
 
 
     # RMS over all trajectories
-    predicted_trajectories = np.stack(predicted_trajectories, axis=0) # [trajectories, timesteps, particles, state]; state = [m,x,y,v_x,v_y]
+    predicted_trajectories = torch.stack(predicted_trajectories, axis=0) # [trajectories, timesteps, particles, state]; state = [m,x,y,v_x,v_y]
     print("RMSE over all trajectories: %f" % (rmse(predicted_trajectories, test_set.trajectories[start_id:end_id,target_step::target_step,:,:]))) #[:,1:,:,1:]
     #print("Mean relative energy error over all trajectories: %f" % (pbc_mean_relative_energy_error(predicted_trajectories, box_size=box_size, physical_const=physical_const, softening=softening, softening_radius=softening_radius)))
 
