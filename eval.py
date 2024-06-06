@@ -9,6 +9,26 @@ from data import TrajectoryDataset, TrajectoryDataset_New
 from model import GNSTODE
 from utils import pbc_rms_error, pbc_mean_relative_energy_error, recreate_folder, create_folder
 
+class RMSE(torch.nn.Module):
+    def __init__(self):
+        super(RMSE, self).__init__()
+        
+        
+    def forward(self, predictions, targets, ):
+        
+        diff = predictions - targets
+        frobenius_norm = torch.linalg.matrix_norm(diff.float(), p='fro') 
+        sqrd_fn = frobenius_norm**2
+        rec_loss = torch.sum(sqrd_fn)
+        if len(predictions.shape) ==4:
+            den = 1/(2*predictions.shape[-2]*predictions.shape[-3]*predictions.shape[-4])
+        else:
+            den = 1/(2*predictions.shape[-2]*predictions.shape[-3])
+        
+        loss = torch.sqrt(den*rec_loss)
+
+        return loss
+
 
 def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph_type="", model_dir="models", data_dir="data", experiment_dir="", pre_load_graphs=True, start_id=0, end_id=-1):
 
@@ -68,8 +88,8 @@ def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph
     batch_size = 1
     
     # Load test data set
-    test_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='test', rollout=True, graph_type=graph_type, target_step=target_step, pre_load_graphs=pre_load_graphs)
-    test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, collate_fn=collate_into_one_graph)
+    test_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='test', rollout=True, graph_type=graph_type, target_step=target_step)
+    test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
     # Get parameters form dataset
     box_size = test_set.box_size
@@ -83,15 +103,15 @@ def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph
     # if model_type == "DeltaGN":
     #     model = DeltaGN(box_size=box_size, edge_output_dim=hidden_units, node_output_dim=hidden_units, simulation_type=simulation_type)
     if model_type == "GNSTODE":
-        model = GNSTODE(n_particles, integrator=integrator,simulation_type=simulation_type)
+        model = GNSTODE(n_particles, box_size=box_size, integrator=integrator, simulation_type=simulation_type)
 
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_dir))  #model path
 
     # Remove old output subfolder if it exists in case all trajectories will be built
-    if start_id == 0 and end_id == -1:
-        recreate_folder(output_folder_path)
-    else:
-        create_folder(output_folder_path)
+    # if start_id == 0 and end_id == -1:
+    #     recreate_folder(output_folder_path)
+    # else:
+    #     create_folder(output_folder_path)
 
     # Set proper end_id
     if end_id == -1:
@@ -120,6 +140,9 @@ def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph
             # Get the inputs as full trajectory
             #if graph_type == 'fully_connected':
             inputs, targets = data
+            
+            inputs = inputs.to(device, non_blocking=True)
+            targets = targets.to(device, non_blocking=True)
             # elif '_level_hierarchical' in graph_type:
             #     inputs, targets, R_s, R_r, assignment, V_super, super_graph = data
 
@@ -137,19 +160,20 @@ def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph
 
             # Log the predicted trajecotry
             output_trajectory = np.zeros((inputs.shape[0]+1, inputs.shape[1], inputs.shape[2]))
-            output_trajectory[0] = inputs[0].numpy()
+            output_trajectory[0] = inputs[0] #.numpy()
 
             # Forward pass 
             current_state = inputs[0].unsqueeze(0)
             current_state = current_state.to(device)
             for j in range(inputs.shape[0]):
-                output = model(current_state, dt)
-                current_state = torch.cat([current_state[:,:,:-4], output], dim = 2).detach() # Detach to stop graph unroll in next loop iteration 
-                
-                output_trajectory[j+1, :, :] = current_state.cpu().detach().numpy() # [timesteps, particles, state]; state = [m,x,y,v_x,v_y]
 
-            
-            print("RMSE for trajectory %i: %f" % (i , pbc_rms_error(output_trajectory[1:,:,:], targets.cpu().numpy(), box_size=box_size))) #[:,:,1:]
+                output = model(current_state, dt)
+                current_state = output.detach() # Detach to stop graph unroll in next loop iteration 
+                
+                output_trajectory[j+1, :, :] = current_state.detach() # [timesteps, particles, state]; state = [m,x,y,v_x,v_y]
+
+            rmse = RMSE()
+            print("RMSE for trajectory %i: %f" % (i , rmse(output_trajectory, targets))) 
         
             # Save the predicted trajectory
             output_filename = os.path.join(output_folder_path,"predicted_trajectory_{i}.npy".format(i=i))
@@ -161,8 +185,8 @@ def evaluate_model(model_file="", dataset="3_particles", model_dataset="", graph
 
     # RMS over all trajectories
     predicted_trajectories = np.stack(predicted_trajectories, axis=0) # [trajectories, timesteps, particles, state]; state = [m,x,y,v_x,v_y]
-    print("RMSE over all trajectories: %f" % (pbc_rms_error(predicted_trajectories, test_set.trajectories[start_id:end_id,target_step::target_step,:,:].numpy(), box_size=box_size))) #[:,1:,:,1:]
-    print("Mean relative energy error over all trajectories: %f" % (pbc_mean_relative_energy_error(predicted_trajectories, box_size=box_size, physical_const=physical_const, softening=softening, softening_radius=softening_radius)))
+    print("RMSE over all trajectories: %f" % (rmse(predicted_trajectories, test_set.trajectories[start_id:end_id,target_step::target_step,:,:]))) #[:,1:,:,1:]
+    #print("Mean relative energy error over all trajectories: %f" % (pbc_mean_relative_energy_error(predicted_trajectories, box_size=box_size, physical_const=physical_const, softening=softening, softening_radius=softening_radius)))
 
     print('Finished evaluation')
 

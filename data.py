@@ -704,16 +704,21 @@ class TrajectoryDataset_New(Dataset):
             
         #     self.no_of_samples = count  #self.trajectory_count*self.trajectory_len
         # else:
-        self.no_of_samples = self.trajectory_count*self.trajectory_len - self.trajectory_count
+        self.split=split
+        if split == "test":
+            self.no_of_samples = self.trajectory_count
+        else:
+            self.no_of_samples = self.trajectory_count*self.trajectory_len - self.trajectory_count
 
 
     def __len__(self):
         return self.no_of_samples
 
     def __getitem__(self, idx):
-        
-        #inputs = self.trajectories[idx, :-1]
-        #targets = self.trajectories[idx, 1:]
-        inputs, targets = self.data[idx][0], self.data[idx][1]
+        if self.split == "test":
+            inputs, targets = self.trajectories[idx, :-1], self.trajectories[idx, 1:]
+        else:
+            inputs, targets = self.data[idx][0], self.data[idx][1]
+            
         return inputs, targets
         
