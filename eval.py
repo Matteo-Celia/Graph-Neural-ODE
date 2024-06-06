@@ -174,7 +174,8 @@ def evaluate_model(model_file="", dataset="3_particles_gravity", model_dataset="
                 output_trajectory[j+1, :, :] = current_state.detach().to(device) # [timesteps, particles, state]; state = [m,x,y,v_x,v_y]
 
             rmse = RMSE()
-            print("RMSE for trajectory %i: %f" % (i , rmse(output_trajectory[1:], targets))) 
+            print(output_trajectory.device,targets.device)
+            print("RMSE for trajectory %i: %f" % (i , rmse(output_trajectory[1:].to(device), targets))) 
         
             # Save the predicted trajectory
             output_filename = os.path.join(output_folder_path,"predicted_trajectory_{i}.npy".format(i=i))
