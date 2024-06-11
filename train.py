@@ -90,11 +90,13 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
     torch.set_num_threads(torch.get_num_threads())
 
     # Load training dataset
-    train_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='train', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
+    train_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='train', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step,transform=True)
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=data_loader_workers, pin_memory=True) #collate_fn=collate_into_one_graph,
 
+    validation_set.mean = train_set.mean
+    validation_set.std = train_set.std
     # Load validation dataset
-    validation_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='validation', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step)
+    validation_set = TrajectoryDataset_New(folder_path=os.path.join(data_dir, dataset), split='validation', graph_type=graph_type, pre_load_graphs=pre_load_graphs, target_step=target_step, transform=True)
     validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=batch_size, shuffle=False, num_workers=data_loader_workers,  pin_memory=True) #collate_fn=collate_into_one_graph,
 
     # Get parameters form dataset

@@ -641,11 +641,11 @@ class TrajectoryDataset(Dataset):
                 return trajectory_input, trajectory_target
             
 class TrajectoryDataset_New(Dataset):
-    def __init__(self, folder_path, split='train', rollout=True, graph_type=None, pre_load_graphs=True, target_step=1):
+    def __init__(self, folder_path, split='train', rollout=True, graph_type=None, pre_load_graphs=True, target_step=1,transform=False):
         self.folder_path = folder_path
         self.split = split
         self.split_folder = os.path.join(folder_path, split)
-
+        self.transform = transform
         # Load parameters from yaml file
         with open(os.path.join(self.folder_path, "params.yaml")) as yaml_file:
             params = yaml.load(yaml_file, Loader=yaml.FullLoader)
@@ -684,7 +684,13 @@ class TrajectoryDataset_New(Dataset):
             for j in range(self.trajectory_len-1):
                 self.data[k] = torch.from_numpy(np.array(([self.trajectories[i][j],self.trajectories[i][j+1]])))
 
-        
+        if split =="train":
+            self.mean=  self.data[:,0].mean(dim=(0, 1))
+            self.std = self.data[:,0].std(dim=(0, 1))
+        else:
+            self.mean =  0
+            self.std = 1
+
         #self.data = self.trajectories.view(self.trajectory_count * self.trajectory_len, self.n_particles, self.n_features)
         
 
@@ -719,6 +725,8 @@ class TrajectoryDataset_New(Dataset):
             inputs, targets = self.trajectories[idx, :-1], self.trajectories[idx, 1:]
         else:
             inputs, targets = self.data[idx][0], self.data[idx][1]
-            
+        
+        if self.transform:
+            inputs, targets = (inputs-self.mean)/self.std, (targets-self.mean)/self.std
         return inputs, targets
         
