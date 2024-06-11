@@ -641,7 +641,7 @@ class TrajectoryDataset(Dataset):
                 return trajectory_input, trajectory_target
             
 class TrajectoryDataset_New(Dataset):
-    def __init__(self, folder_path, split='train', rollout=True, graph_type=None, pre_load_graphs=True, target_step=1,transform=False):
+    def __init__(self, folder_path, split='train', rollout=True, graph_type=None, pre_load_graphs=True, target_step=1,transform=False, mean=0,std=1):
         self.folder_path = folder_path
         self.split = split
         self.split_folder = os.path.join(folder_path, split)
@@ -688,8 +688,8 @@ class TrajectoryDataset_New(Dataset):
             self.mean=  self.data[:,0].mean(dim=(0, 1))
             self.std = self.data[:,0].std(dim=(0, 1))
         else:
-            self.mean =  0
-            self.std = 1
+            self.mean =  mean
+            self.std = std
 
         #self.data = self.trajectories.view(self.trajectory_count * self.trajectory_len, self.n_particles, self.n_features)
         
