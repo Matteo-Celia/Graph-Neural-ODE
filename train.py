@@ -113,7 +113,7 @@ def train_model(model_type="GNSTODE", dataset="3_particles_gravity", learning_ra
     device = torch.device("cuda:0" if ((not cpu) and torch.cuda.is_available()) else "cpu")#cuda:0
     model.to(device)
 
-    load = True
+    load = False
     if load:
         checkpoint = torch.load('load/GNSTODE_euler_lr_0.0003_decay_0.1_epochs_10_batch_size_50_accumulate_steps_1_graph__nn_target_step_1_20240604-071306_82KGST5IHY_checkpoint.tar')
         model.load_state_dict(checkpoint['model_state_dict'])
